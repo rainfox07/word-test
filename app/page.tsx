@@ -38,14 +38,19 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <Card className="grid gap-4 self-center bg-slate-950 text-white">
+        <Card className="hero-process-card grid gap-4 self-center">
           <div>
-            <p className="text-sm text-sky-200">学习流程</p>
-            <h2 className="mt-2 text-2xl font-bold">导入词库 → 播放音频 → 拼写作答 → 记录结果</h2>
+            <p className="text-sm font-semibold tracking-wide text-slate-950">学习流程</p>
+            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">
+              导入词库 → 播放音频 → 拼写作答 → 记录结果
+            </h2>
           </div>
           <div className="grid gap-3">
             {features.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-100">
+              <div
+                key={feature}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-4 text-sm font-medium leading-6 text-slate-950"
+              >
                 {feature}
               </div>
             ))}
