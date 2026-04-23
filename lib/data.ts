@@ -2,6 +2,7 @@ import { and, countDistinct, desc, eq, inArray, isNotNull, or, sql } from "drizz
 
 import { db } from "@/db";
 import { testRecords, wordLists, words } from "@/db/schema";
+import { ensureWordAudioUrl } from "@/lib/dictionary";
 
 export async function getAccessibleWordLists(userId: string) {
   return db.query.wordLists.findMany({
@@ -100,11 +101,16 @@ export async function getRandomQuestion(wordListId: string, userId: string, excl
   }
 
   const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+  const audioUrl = await ensureWordAudioUrl({
+    wordId: randomWord.id,
+    word: randomWord.word,
+    currentAudioUrl: randomWord.pronunciationAudioUrl,
+  });
 
   return {
     wordId: randomWord.id,
-    audioUrl: randomWord.pronunciationAudioUrl,
-    hasAudio: Boolean(randomWord.pronunciationAudioUrl),
+    audioUrl,
+    hasAudio: Boolean(audioUrl),
     remainingCount: availableWords.length,
   };
 }

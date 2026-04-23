@@ -1,4 +1,7 @@
 import { env } from "./env";
+import { db } from "@/db";
+import { words } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 type DictionaryEntry = {
   phonetics?: Array<{
@@ -28,8 +31,38 @@ export async function fetchPronunciationAudioUrl(word: string) {
       .map((item) => item.audio?.trim())
       .find((value) => Boolean(value));
 
-    return audio || null;
+    if (!audio) {
+      return null;
+    }
+
+    return audio.startsWith("//") ? `https:${audio}` : audio;
   } catch {
     return null;
   }
+}
+
+export async function ensureWordAudioUrl(input: {
+  wordId: string;
+  word: string;
+  currentAudioUrl: string | null;
+}) {
+  if (input.currentAudioUrl) {
+    return input.currentAudioUrl;
+  }
+
+  const fetchedAudioUrl = await fetchPronunciationAudioUrl(input.word);
+
+  if (!fetchedAudioUrl) {
+    return null;
+  }
+
+  await db
+    .update(words)
+    .set({
+      pronunciationAudioUrl: fetchedAudioUrl,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(words.id, input.wordId));
+
+  return fetchedAudioUrl;
 }

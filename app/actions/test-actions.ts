@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { testRecords, words } from "@/db/schema";
 import { requireSession } from "@/lib/auth-session";
 import { getMistakeWords, getRandomQuestion, getRecentLearningRecords } from "@/lib/data";
+import { ensureWordAudioUrl } from "@/lib/dictionary";
 import { submitAnswerSchema } from "@/lib/word-import";
 
 export async function getTestQuestionAction(wordListId: string, excludedWordIds: string[]) {
@@ -43,6 +44,11 @@ export async function submitTestAnswerAction(payload: {
   const normalizedAnswer = values.userAnswer.trim().toLowerCase();
   const normalizedWord = selectedWord.word.trim().toLowerCase();
   const isCorrect = normalizedAnswer === normalizedWord;
+  const audioUrl = await ensureWordAudioUrl({
+    wordId: selectedWord.id,
+    word: selectedWord.word,
+    currentAudioUrl: selectedWord.pronunciationAudioUrl,
+  });
 
   await db.insert(testRecords).values({
     userId: session.user.id,
@@ -58,9 +64,10 @@ export async function submitTestAnswerAction(payload: {
 
   return {
     isCorrect,
+    userAnswer: normalizedAnswer,
     correctWord: selectedWord.word,
     meaning: selectedWord.meaning,
-    audioUrl: selectedWord.pronunciationAudioUrl,
+    audioUrl,
   };
 }
 

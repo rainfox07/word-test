@@ -29,6 +29,28 @@ const defaultWordLists = [
       { word: "estimate", meaning: "估计" },
     ],
   },
+  {
+    name: "Travel Essentials",
+    description: "旅行与出行场景常用词",
+    words: [
+      { word: "travel", meaning: "旅行" },
+      { word: "airport", meaning: "机场" },
+      { word: "ticket", meaning: "票" },
+      { word: "hotel", meaning: "酒店" },
+      { word: "taxi", meaning: "出租车" },
+    ],
+  },
+  {
+    name: "Campus Starter",
+    description: "校园与课堂入门词汇",
+    words: [
+      { word: "school", meaning: "学校" },
+      { word: "teacher", meaning: "老师" },
+      { word: "student", meaning: "学生" },
+      { word: "lesson", meaning: "课程" },
+      { word: "pencil", meaning: "铅笔" },
+    ],
+  },
 ];
 
 async function upsertSystemWordList(name: string, description: string) {
@@ -54,23 +76,66 @@ async function upsertSystemWordList(name: string, description: string) {
   return inserted.id;
 }
 
+async function upsertWord(input: {
+  wordListId: string;
+  word: string;
+  meaning: string;
+  pronunciationAudioUrl: string | null;
+}) {
+  const existingWord = await db.query.words.findFirst({
+    where: and(eq(words.wordListId, input.wordListId), eq(words.word, input.word)),
+  });
+
+  if (existingWord) {
+    await db
+      .update(words)
+      .set({
+        meaning: input.meaning,
+        pronunciationAudioUrl: input.pronunciationAudioUrl,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(words.id, existingWord.id));
+
+    return;
+  }
+
+  await db.insert(words).values({
+    wordListId: input.wordListId,
+    word: input.word,
+    meaning: input.meaning,
+    pronunciationAudioUrl: input.pronunciationAudioUrl,
+    createdByUserId: null,
+  });
+}
+
+async function removeObsoleteSystemWords(wordListId: string, validWords: string[]) {
+  const existingWords = await db.query.words.findMany({
+    where: eq(words.wordListId, wordListId),
+  });
+
+  for (const existingWord of existingWords) {
+    if (!validWords.includes(existingWord.word)) {
+      await db.delete(words).where(eq(words.id, existingWord.id));
+    }
+  }
+}
+
 async function main() {
   for (const list of defaultWordLists) {
     const listId = await upsertSystemWordList(list.name, list.description);
+    const validWords = list.words.map((item) => item.word);
+
+    await removeObsoleteSystemWords(listId, validWords);
 
     for (const item of list.words) {
       const audioUrl = await fetchPronunciationAudioUrl(item.word);
 
-      await db
-        .insert(words)
-        .values({
-          wordListId: listId,
-          word: item.word,
-          meaning: item.meaning,
-          pronunciationAudioUrl: audioUrl,
-          createdByUserId: null,
-        })
-        .onConflictDoNothing();
+      await upsertWord({
+        wordListId: listId,
+        word: item.word,
+        meaning: item.meaning,
+        pronunciationAudioUrl: audioUrl,
+      });
     }
   }
 

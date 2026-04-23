@@ -9,7 +9,8 @@
     "lint": "next lint",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "node --import tsx scripts/seed.ts",
+    "verify:word-lists": "node --import tsx scripts/verify-word-lists.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.15.15",

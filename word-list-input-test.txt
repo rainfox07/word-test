@@ -1,0 +1,1 @@
+book:书;pen:钢笔;table:桌子;chair:椅子;school:学校;teacher:老师;student:学生;friend:朋友;family:家庭;water:水;food:食物;house:房子;room:房间;window:窗户;door:门;computer:电脑;phone:手机;music:音乐;movie:电影;happy:开心的;sad:伤心的;big:大的;small:小的;beautiful:美丽的;morning:早上;night:夜晚;green:绿色;yellow:黄色;summer:夏天;winter:冬天

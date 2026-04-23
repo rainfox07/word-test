@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef } from "react";
 
 import {
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -31,8 +33,10 @@ function FormFeedback({ state }: { state: ActionResult }) {
 
   return (
     <p
-      className={`rounded-2xl px-4 py-3 text-sm ${
-        state.success ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+      className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+        state.success
+          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+          : "border-rose-200 bg-rose-50 text-rose-900"
       }`}
     >
       {state.message}
@@ -41,6 +45,7 @@ function FormFeedback({ state }: { state: ActionResult }) {
 }
 
 export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordList[] }) {
+  const router = useRouter();
   const [createState, createAction] = useActionState(createWordListAction, initialState);
   const [addWordState, addWordFormAction] = useActionState(addWordAction, initialState);
   const [importState, importFormAction] = useActionState(importWordsAction, initialState);
@@ -52,20 +57,23 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
   useEffect(() => {
     if (createState.success) {
       createFormRef.current?.reset();
+      router.refresh();
     }
-  }, [createState]);
+  }, [createState, router]);
 
   useEffect(() => {
     if (addWordState.success) {
       addWordFormRef.current?.reset();
+      router.refresh();
     }
-  }, [addWordState]);
+  }, [addWordState, router]);
 
   useEffect(() => {
     if (importState.success) {
       importFormRef.current?.reset();
+      router.refresh();
     }
-  }, [importState]);
+  }, [importState, router]);
 
   return (
     <div className="grid gap-6 xl:grid-cols-3">
@@ -96,10 +104,9 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
         <form ref={addWordFormRef} action={addWordFormAction} className="space-y-4">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">选择词库</span>
-            <select
+            <Select
               name="wordListId"
               required
-              className="block w-full rounded-2xl border-slate-200 px-4 py-3 text-sm focus:border-brand-500 focus:ring-brand-500"
             >
               <option value="">请选择我的词库</option>
               {ownedWordLists.map((list) => (
@@ -107,7 +114,7 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
                   {list.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">英文单词</span>
@@ -129,12 +136,16 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
             支持粘贴或上传 `.txt`。格式：`word:中文;word:中文`
           </p>
         </div>
-        <form ref={importFormRef} action={importFormAction} className="space-y-4">
+        <form
+          ref={importFormRef}
+          action={importFormAction}
+          encType="multipart/form-data"
+          className="space-y-4"
+        >
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">导入到现有词库</span>
-            <select
+            <Select
               name="targetWordListId"
-              className="block w-full rounded-2xl border-slate-200 px-4 py-3 text-sm focus:border-brand-500 focus:ring-brand-500"
             >
               <option value="">不选择则创建新词库</option>
               {ownedWordLists.map((list) => (
@@ -142,7 +153,7 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
                   {list.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">新词库名</span>

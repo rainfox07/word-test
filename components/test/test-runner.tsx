@@ -21,6 +21,7 @@ type Question = {
 
 type AnswerFeedback = {
   isCorrect: boolean;
+  userAnswer: string;
   correctWord: string;
   meaning: string;
   audioUrl: string | null;
@@ -34,7 +35,11 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
   const [hasFetched, setHasFetched] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [audioNotice, setAudioNotice] = useState<string | null>(null);
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const loadQuestion = (excludedIds: string[]) => {
     startTransition(async () => {
@@ -51,6 +56,8 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
         setAnswer("");
         setFeedback(null);
         setLoadError(null);
+        setAudioNotice(null);
+        setAutoAdvanceCountdown(null);
         audioRef.current?.pause();
         audioRef.current = null;
       } catch (error) {
@@ -64,20 +71,63 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
     loadQuestion([]);
   }, []);
 
-  const playAudio = () => {
-    if (!question?.audioUrl) {
+  const playAudio = async (options?: { source?: "auto" | "manual"; audioUrl?: string | null }) => {
+    const audioUrl = options?.audioUrl ?? question?.audioUrl ?? feedback?.audioUrl;
+    const isAutoPlayback = options?.source === "auto";
+
+    if (!audioUrl) {
+      setAudioNotice("当前单词暂无可播放音频。");
       return;
     }
 
     if (!audioRef.current) {
-      audioRef.current = new Audio(question.audioUrl);
+      audioRef.current = new Audio(audioUrl);
+    } else if (audioRef.current.src !== audioUrl) {
+      audioRef.current.pause();
+      audioRef.current = new Audio(audioUrl);
     }
 
     audioRef.current.currentTime = 0;
-    void audioRef.current.play().catch(() => {
-      setLoadError("当前浏览器拦截了自动播放，请再次点击播放按钮。");
-    });
+    try {
+      await audioRef.current.play();
+      setAudioNotice(null);
+    } catch {
+      setAudioNotice(
+        isAutoPlayback
+          ? "浏览器阻止了自动播放，请点击播放按钮继续练习。"
+          : "音频播放失败，请稍后重试。",
+      );
+    }
   };
+
+  useEffect(() => {
+    if (!question) {
+      return;
+    }
+
+    if (question.hasAudio) {
+      void playAudio({ source: "auto", audioUrl: question.audioUrl });
+      return;
+    }
+
+    setAudioNotice("当前单词暂无音频，你可以直接尝试拼写或切换下一题。");
+  }, [question?.wordId]);
+
+  useEffect(() => {
+    if (!question || feedback) {
+      return;
+    }
+
+    // Delay focus until the next frame so the input is enabled and rendered for the new question.
+    const frameId = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [question?.wordId, feedback]);
 
   const handleSubmit = () => {
     if (!question || !answer.trim()) {
@@ -93,7 +143,9 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
         });
 
         setFeedback(result);
-        setUsedWordIds((current) => [...current, question.wordId]);
+        setUsedWordIds((current) =>
+          current.includes(question.wordId) ? current : [...current, question.wordId],
+        );
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : "提交失败");
       }
@@ -105,6 +157,38 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
     setUsedWordIds(nextExcludedIds);
     loadQuestion(nextExcludedIds);
   };
+
+  useEffect(() => {
+    if (!feedback?.isCorrect || !question) {
+      setAutoAdvanceCountdown(null);
+      return;
+    }
+
+    setAutoAdvanceCountdown(1);
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      const nextExcludedIds = usedWordIds.includes(question.wordId)
+        ? usedWordIds
+        : [...usedWordIds, question.wordId];
+
+      setUsedWordIds(nextExcludedIds);
+      loadQuestion(nextExcludedIds);
+    }, 1000);
+
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+    };
+  }, [feedback?.isCorrect, question?.wordId, usedWordIds]);
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+      audioRef.current?.pause();
+    };
+  }, []);
 
   return (
     <Card className="mx-auto max-w-3xl">
@@ -122,22 +206,30 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
         <div className="space-y-6">
           <div className="rounded-3xl bg-slate-950 p-6 text-white">
             <p className="text-sm text-sky-200">音频练习区</p>
-            <Button className="mt-4 h-16 w-full text-lg" onClick={playAudio}>
+            <Button
+              className="mt-4 h-16 w-full text-lg"
+              onClick={() => {
+                void playAudio({ source: "manual" });
+              }}
+            >
               {question.hasAudio ? "播放单词音频" : "该单词暂无音频"}
             </Button>
-            <p className="mt-3 text-sm text-slate-300">
-              {question.hasAudio
-                ? "播放按钮支持重复点击。"
-                : "当前单词没有可用音频，你仍可尝试回忆拼写或切换下一题。"}
-            </p>
+            <p className="mt-3 text-sm text-slate-300">{audioNotice || "播放按钮支持重复点击。"}</p>
           </div>
 
           <div className="space-y-3">
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">请输入英文单词拼写</span>
               <Input
+                ref={inputRef}
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    handleSubmit();
+                  }
+                }}
                 placeholder="输入你听到的单词"
                 className="h-14 text-base"
                 disabled={Boolean(feedback)}
@@ -160,9 +252,29 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
               }`}
             >
               <p className="text-lg font-semibold">{feedback.isCorrect ? "回答正确" : "回答错误"}</p>
-              <p className="mt-2 text-sm">
-                正确拼写：{feedback.correctWord} · 中文含义：{feedback.meaning}
-              </p>
+              {feedback.isCorrect ? (
+                <p className="mt-2 text-sm">
+                  正确拼写：{feedback.correctWord} · 中文含义：{feedback.meaning}
+                  {autoAdvanceCountdown !== null ? ` · ${autoAdvanceCountdown} 秒后进入下一题` : ""}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3 text-sm">
+                  <p>你的输入：{feedback.userAnswer}</p>
+                  <p>正确拼写：{feedback.correctWord}</p>
+                  <p>中文含义：{feedback.meaning}</p>
+                  <div>
+                    <Button
+                      variant="secondary"
+                      className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-100"
+                      onClick={() => {
+                        void playAudio({ source: "manual", audioUrl: feedback.audioUrl });
+                      }}
+                    >
+                      播放该单词音频
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : null}
 
