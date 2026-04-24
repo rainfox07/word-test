@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { DEFAULT_ACCOUNT_EMAIL, normalizeLoginEmail } from "@/lib/default-account";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -37,7 +38,8 @@ export function AuthForm({ mode }: AuthFormProps) {
 
           const formData = new FormData(event.currentTarget);
           const name = formData.get("name")?.toString().trim();
-          const email = formData.get("email")?.toString().trim() ?? "";
+          const rawEmail = formData.get("email")?.toString().trim() ?? "";
+          const email = normalizeLoginEmail(rawEmail);
           const password = formData.get("password")?.toString() ?? "";
 
           startTransition(async () => {
@@ -72,7 +74,12 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <label className="block space-y-2">
           <span className="text-sm font-medium text-slate-700">邮箱</span>
-          <Input name="email" type="email" placeholder="you@example.com" required />
+          <Input
+            name="email"
+            type="text"
+            placeholder={mode === "login" ? `演示账户可直接输入 admin` : "you@example.com"}
+            required
+          />
         </label>
 
         <label className="block space-y-2">
@@ -98,6 +105,15 @@ export function AuthForm({ mode }: AuthFormProps) {
           {mode === "login" ? "去注册" : "去登录"}
         </Link>
       </p>
+      {mode === "login" ? (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          默认演示账户：<code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">admin</code> /{" "}
+          <code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">admin</code>
+          <br />
+          为兼容 Better Auth 的邮箱校验，系统内部实际邮箱为{" "}
+          <code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">{DEFAULT_ACCOUNT_EMAIL}</code>。
+        </div>
+      ) : null}
     </Card>
   );
 }

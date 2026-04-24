@@ -7,16 +7,21 @@ import { getTestQuestionAction, submitTestAnswerAction } from "@/app/actions/tes
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TestMode, getTestModeMeta } from "@/lib/test-modes";
 
 type TestRunnerProps = {
   wordListId: string;
   wordListName: string;
+  testMode: TestMode;
 };
 
 type Question = {
   wordId: string;
+  word: string;
+  meaning: string;
   audioUrl: string | null;
   hasAudio: boolean;
+  testMode: TestMode;
 };
 
 type AnswerFeedback = {
@@ -27,7 +32,7 @@ type AnswerFeedback = {
   audioUrl: string | null;
 };
 
-export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
+export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerProps) {
   const [question, setQuestion] = useState<Question | null>(null);
   const [usedWordIds, setUsedWordIds] = useState<string[]>([]);
   const [answer, setAnswer] = useState("");
@@ -37,14 +42,25 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [audioNotice, setAudioNotice] = useState<string | null>(null);
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
+  const [correctSoundEnabled, setCorrectSoundEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const successAudioRef = useRef<HTMLAudioElement | null>(null);
+  const modeMeta = getTestModeMeta(testMode);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem("word-test:correct-sound-enabled");
+
+    if (storedValue === "false") {
+      setCorrectSoundEnabled(false);
+    }
+  }, []);
 
   const loadQuestion = (excludedIds: string[]) => {
     startTransition(async () => {
       try {
-        const nextQuestion = await getTestQuestionAction(wordListId, excludedIds);
+        const nextQuestion = await getTestQuestionAction(wordListId, excludedIds, testMode);
         setHasFetched(true);
 
         if (!nextQuestion) {
@@ -101,7 +117,7 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
   };
 
   useEffect(() => {
-    if (!question) {
+    if (testMode !== "audio_to_word" || !question) {
       return;
     }
 
@@ -111,7 +127,13 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
     }
 
     setAudioNotice("当前单词暂无音频，你可以直接尝试拼写或切换下一题。");
-  }, [question?.wordId]);
+  }, [question?.wordId, testMode]);
+
+  useEffect(() => {
+    if (testMode !== "audio_to_word") {
+      setAudioNotice(null);
+    }
+  }, [testMode]);
 
   useEffect(() => {
     if (!question || feedback) {
@@ -139,6 +161,7 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
         const result = await submitTestAnswerAction({
           wordListId,
           wordId: question.wordId,
+          testMode,
           userAnswer: answer,
         });
 
@@ -151,6 +174,30 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
       }
     });
   };
+
+  const playCorrectSound = async () => {
+    if (!correctSoundEnabled) {
+      return;
+    }
+
+    if (!successAudioRef.current) {
+      successAudioRef.current = new Audio("/sounds/correct-answer.wav");
+    }
+
+    successAudioRef.current.currentTime = 0;
+
+    try {
+      await successAudioRef.current.play();
+    } catch {
+      // Ignore autoplay restrictions for the feedback sound.
+    }
+  };
+
+  useEffect(() => {
+    if (feedback?.isCorrect) {
+      void playCorrectSound();
+    }
+  }, [feedback?.isCorrect]);
 
   const handleNext = () => {
     const nextExcludedIds = question ? [...usedWordIds, question.wordId] : usedWordIds;
@@ -195,7 +242,7 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
       <div className="mb-6">
         <p className="text-sm font-medium text-brand-700">当前词库</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{wordListName}</h1>
-        <p className="mt-2 text-sm text-slate-500">播放音频后输入英文拼写。题目会随机抽取且不重复，直到本轮词库耗尽。</p>
+        <p className="mt-2 text-sm text-slate-500">{modeMeta.description}</p>
       </div>
 
       {!hasFetched ? (
@@ -204,18 +251,25 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
         </div>
       ) : question ? (
         <div className="space-y-6">
-          <div className="rounded-3xl bg-slate-950 p-6 text-white">
-            <p className="text-sm text-sky-200">音频练习区</p>
-            <Button
-              className="mt-4 h-16 w-full text-lg"
-              onClick={() => {
-                void playAudio({ source: "manual" });
-              }}
-            >
-              {question.hasAudio ? "播放单词音频" : "该单词暂无音频"}
-            </Button>
-            <p className="mt-3 text-sm text-slate-300">{audioNotice || "播放按钮支持重复点击。"}</p>
-          </div>
+          {testMode === "audio_to_word" ? (
+            <div className="rounded-3xl bg-slate-950 p-6 text-white">
+              <p className="text-sm text-sky-200">音频练习区</p>
+              <Button
+                className="mt-4 h-16 w-full text-lg"
+                onClick={() => {
+                  void playAudio({ source: "manual" });
+                }}
+              >
+                {question.hasAudio ? "播放单词音频" : "该单词暂无音频"}
+              </Button>
+              <p className="mt-3 text-sm text-slate-300">{audioNotice || "播放按钮支持重复点击。"}</p>
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white px-6 py-6">
+              <p className="text-sm font-medium text-brand-700">中文提示</p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{question.meaning}</p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <label className="block space-y-2">
@@ -241,6 +295,16 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
               </Button>
               <Button variant="secondary" onClick={handleNext} disabled={isPending}>
                 下一题
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  const nextValue = !correctSoundEnabled;
+                  setCorrectSoundEnabled(nextValue);
+                  window.localStorage.setItem("word-test:correct-sound-enabled", String(nextValue));
+                }}
+              >
+                {correctSoundEnabled ? "关闭答对提示音" : "开启答对提示音"}
               </Button>
             </div>
           </div>
@@ -296,7 +360,7 @@ export function TestRunner({ wordListId, wordListName }: TestRunnerProps) {
               重新开始
             </Button>
             <Button variant="secondary" asChild>
-              <Link href="/word-lists">返回词库页</Link>
+              <Link href={`/test/${wordListId}`}>返回模式选择</Link>
             </Button>
           </div>
         </div>

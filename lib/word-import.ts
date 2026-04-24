@@ -32,6 +32,7 @@ export const importWordsSchema = z.object({
 export const submitAnswerSchema = z.object({
   wordListId: z.string().trim().min(1),
   wordId: z.string().trim().min(1),
+  testMode: z.enum(["audio_to_word", "meaning_to_word"]),
   userAnswer: z.string().trim().min(1, "请输入你的拼写"),
 });
 

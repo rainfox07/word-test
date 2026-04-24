@@ -8,16 +8,22 @@ import { testRecords, words } from "@/db/schema";
 import { requireSession } from "@/lib/auth-session";
 import { getMistakeWords, getRandomQuestion, getRecentLearningRecords } from "@/lib/data";
 import { ensureWordAudioUrl } from "@/lib/dictionary";
+import { TestMode } from "@/lib/test-modes";
 import { submitAnswerSchema } from "@/lib/word-import";
 
-export async function getTestQuestionAction(wordListId: string, excludedWordIds: string[]) {
+export async function getTestQuestionAction(
+  wordListId: string,
+  excludedWordIds: string[],
+  testMode: TestMode,
+) {
   const session = await requireSession();
-  return getRandomQuestion(wordListId, session.user.id, excludedWordIds);
+  return getRandomQuestion(wordListId, session.user.id, excludedWordIds, testMode);
 }
 
 export async function submitTestAnswerAction(payload: {
   wordListId: string;
   wordId: string;
+  testMode: TestMode;
   userAnswer: string;
 }) {
   const session = await requireSession();
@@ -54,6 +60,7 @@ export async function submitTestAnswerAction(payload: {
     userId: session.user.id,
     wordId: selectedWord.id,
     wordListId: values.wordListId,
+    testMode: values.testMode,
     userAnswer: normalizedAnswer,
     isCorrect,
   });

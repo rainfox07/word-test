@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { MistakeAudioButton } from "@/components/mistakes/mistake-audio-button";
 import { requireSession } from "@/lib/auth-session";
 import { getMistakeWords } from "@/lib/data";
 import { formatDateTime } from "@/lib/utils";
@@ -26,7 +27,10 @@ export default async function MistakesPage() {
                     </p>
                     <p className="mt-1 text-sm text-slate-500">来源词库：{item.wordListName}</p>
                   </div>
-                  <div className="text-sm text-slate-500">最近答错：{formatDateTime(item.lastWrongAt)}</div>
+                  <div className="flex flex-col items-start gap-2 md:items-end">
+                    <div className="text-sm text-slate-500">最近答错：{formatDateTime(item.lastWrongAt)}</div>
+                    <MistakeAudioButton audioUrl={item.pronunciationAudioUrl} />
+                  </div>
                 </div>
               </div>
             ))

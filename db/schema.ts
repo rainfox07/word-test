@@ -122,6 +122,11 @@ export const testRecords = sqliteTable(
     wordListId: text("wordlist_id")
       .notNull()
       .references(() => wordLists.id, { onDelete: "cascade" }),
+    testMode: text("test_mode", {
+      enum: ["audio_to_word", "meaning_to_word"],
+    })
+      .notNull()
+      .default("audio_to_word"),
     userAnswer: text("user_answer").notNull(),
     isCorrect: integer("is_correct", { mode: "boolean" }).notNull(),
     answeredAt: text("answered_at")

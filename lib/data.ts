@@ -1,8 +1,9 @@
-import { and, countDistinct, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, countDistinct, desc, eq, inArray, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { testRecords, wordLists, words } from "@/db/schema";
 import { ensureWordAudioUrl } from "@/lib/dictionary";
+import { TestMode } from "@/lib/test-modes";
 
 export async function getAccessibleWordLists(userId: string) {
   return db.query.wordLists.findMany({
@@ -55,6 +56,7 @@ export async function getRecentLearningRecords(userId: string, limit = 8) {
       userAnswer: testRecords.userAnswer,
       isCorrect: testRecords.isCorrect,
       answeredAt: testRecords.answeredAt,
+      testMode: testRecords.testMode,
       word: words.word,
       meaning: words.meaning,
       wordListName: wordLists.name,
@@ -84,10 +86,24 @@ export async function getMistakeWords(userId: string) {
     .groupBy(words.id, words.word, words.meaning, words.pronunciationAudioUrl, wordLists.name)
     .orderBy(desc(sql`max(${testRecords.answeredAt})`));
 
-  return wrongRecords;
+  return Promise.all(
+    wrongRecords.map(async (record) => ({
+      ...record,
+      pronunciationAudioUrl: await ensureWordAudioUrl({
+        wordId: record.wordId,
+        word: record.word,
+        currentAudioUrl: record.pronunciationAudioUrl,
+      }),
+    })),
+  );
 }
 
-export async function getRandomQuestion(wordListId: string, userId: string, excludedWordIds: string[]) {
+export async function getRandomQuestion(
+  wordListId: string,
+  userId: string,
+  excludedWordIds: string[],
+  testMode: TestMode,
+) {
   const list = await getWordListForUser(wordListId, userId);
 
   if (!list) {
@@ -109,9 +125,12 @@ export async function getRandomQuestion(wordListId: string, userId: string, excl
 
   return {
     wordId: randomWord.id,
+    word: randomWord.word,
+    meaning: randomWord.meaning,
     audioUrl,
     hasAudio: Boolean(audioUrl),
     remainingCount: availableWords.length,
+    testMode,
   };
 }
 

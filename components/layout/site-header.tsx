@@ -12,6 +12,7 @@ type SiteHeaderProps = {
 const navItems = [
   { href: "/dashboard", label: "仪表盘" },
   { href: "/word-lists", label: "词库管理" },
+  { href: "/membership", label: "会员" },
   { href: "/mistakes", label: "错词本" },
 ];
 

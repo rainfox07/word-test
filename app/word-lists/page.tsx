@@ -19,8 +19,6 @@ export default async function WordListsPage() {
         <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">默认词库与我的词库</h1>
       </div>
 
-      <WordListForms ownedWordLists={ownedLists.map((list) => ({ id: list.id, name: list.name }))} />
-
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <div className="mb-4">
@@ -73,6 +71,15 @@ export default async function WordListsPage() {
             )}
           </div>
         </Card>
+      </div>
+
+      <div>
+        <div className="mb-4">
+          <p className="text-sm font-medium text-brand-700">创建与导入</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">先学习，后补充词库</h2>
+          <p className="mt-2 text-sm text-slate-500">把创建词库和导入操作放到后面，优先展示可以直接开始测试的内容。</p>
+        </div>
+        <WordListForms ownedWordLists={ownedLists.map((list) => ({ id: list.id, name: list.name }))} />
       </div>
     </div>
   );

@@ -1,9 +1,11 @@
 import "dotenv/config";
 
 import { and, eq } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 
 import { db } from "../db";
-import { wordLists, words } from "../db/schema";
+import { accounts, users, wordLists, words } from "../db/schema";
+import { DEFAULT_ACCOUNT_EMAIL } from "../lib/default-account";
 import { fetchPronunciationAudioUrl } from "../lib/dictionary";
 
 const defaultWordLists = [
@@ -120,7 +122,46 @@ async function removeObsoleteSystemWords(wordListId: string, validWords: string[
   }
 }
 
+async function ensureDefaultAdminAccount() {
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.id, "admin"),
+  });
+  const timestamp = new Date().toISOString();
+
+  if (!existingUser) {
+    await db.insert(users).values({
+      id: "admin",
+      name: "admin",
+      email: DEFAULT_ACCOUNT_EMAIL,
+      emailVerified: true,
+      image: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
+
+  const existingAccount = await db.query.accounts.findFirst({
+    where: and(eq(accounts.providerId, "credential"), eq(accounts.accountId, "admin")),
+  });
+
+  if (!existingAccount) {
+    const passwordHash = await hashPassword("admin");
+
+    await db.insert(accounts).values({
+      id: crypto.randomUUID(),
+      accountId: "admin",
+      providerId: "credential",
+      userId: "admin",
+      password: passwordHash,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
+}
+
 async function main() {
+  await ensureDefaultAdminAccount();
+
   for (const list of defaultWordLists) {
     const listId = await upsertSystemWordList(list.name, list.description);
     const validWords = list.words.map((item) => item.word);
