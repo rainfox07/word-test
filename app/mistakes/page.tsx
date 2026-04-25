@@ -33,7 +33,7 @@ export default async function MistakesPage() {
                   </div>
                   <div className="flex flex-col items-start gap-2 md:items-end">
                     <div className="text-sm text-slate-500">最近答错：{formatDateTime(item.lastWrongAt)}</div>
-                    <MistakeAudioButton audioUrl={item.pronunciationAudioUrl} />
+                    <MistakeAudioButton audioUrl={item.pronunciationAudioUrl} word={item.word} />
                   </div>
                 </div>
               </div>

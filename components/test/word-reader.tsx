@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { playWordAudio } from "@/lib/play-word-audio";
 
 type ReaderWord = {
   id: string;
@@ -142,30 +143,25 @@ export function WordReader({
       audioRef.current.pause();
     }
 
+    window.speechSynthesis?.cancel();
+
     setIsPlaying(false);
   };
 
-  const playSingleRound = async (audio: HTMLAudioElement, sequenceId: number) => {
-    audio.currentTime = 0;
-
+  const playSingleRound = async (sequenceId: number) => {
     try {
-      await audio.play();
+      const playedWith = await playWordAudio({
+        word: currentWord?.word ?? "",
+        audioUrl: currentWord?.pronunciationAudioUrl ?? null,
+        audioRef,
+      });
+
+      setNotice(playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null);
     } catch {
-      setNotice("音频播放失败，请稍后重试。");
+      setNotice("发音播放失败，请稍后重试。");
       setIsPlaying(false);
       return false;
     }
-
-    await new Promise<void>((resolve) => {
-      const finish = () => {
-        audio.onended = null;
-        audio.onpause = null;
-        resolve();
-      };
-
-      audio.onended = finish;
-      audio.onpause = finish;
-    });
 
     return sequenceRef.current === sequenceId;
   };
@@ -178,24 +174,10 @@ export function WordReader({
     const sequenceId = ++sequenceRef.current;
 
     const run = async () => {
-      if (!currentWord.pronunciationAudioUrl) {
-        setNotice("当前单词暂无音频。");
-        setIsPlaying(false);
-        return;
-      }
-
-      if (!audioRef.current) {
-        audioRef.current = new Audio(currentWord.pronunciationAudioUrl);
-      } else if (audioRef.current.src !== currentWord.pronunciationAudioUrl) {
-        audioRef.current.pause();
-        audioRef.current = new Audio(currentWord.pronunciationAudioUrl);
-      }
-
-      setNotice(null);
       setIsPlaying(true);
 
       for (let index = 0; index < repeatCount; index += 1) {
-        const shouldContinue = await playSingleRound(audioRef.current, sequenceId);
+        const shouldContinue = await playSingleRound(sequenceId);
 
         if (!shouldContinue) {
           return;

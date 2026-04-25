@@ -7,6 +7,7 @@ import { getTestQuestionAction, submitTestAnswerAction } from "@/app/actions/tes
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { playWordAudio } from "@/lib/play-word-audio";
 import { TestMode, getTestModeMeta } from "@/lib/test-modes";
 
 type TestRunnerProps = {
@@ -102,31 +103,35 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
     loadQuestion([]);
   }, []);
 
-  const playAudio = async (options?: { source?: "auto" | "manual"; audioUrl?: string | null }) => {
+  const playAudio = async (options?: {
+    source?: "auto" | "manual";
+    audioUrl?: string | null;
+    word?: string;
+  }) => {
     const audioUrl = options?.audioUrl ?? question?.audioUrl ?? feedback?.audioUrl;
+    const word = options?.word ?? question?.word ?? feedback?.correctWord;
     const isAutoPlayback = options?.source === "auto";
 
-    if (!audioUrl) {
-      setAudioNotice("当前单词暂无可播放音频。");
+    if (!word) {
+      setAudioNotice("当前单词暂时无法播放，请稍后重试。");
       return;
     }
 
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl);
-    } else if (audioRef.current.src !== audioUrl) {
-      audioRef.current.pause();
-      audioRef.current = new Audio(audioUrl);
-    }
-
-    audioRef.current.currentTime = 0;
     try {
-      await audioRef.current.play();
-      setAudioNotice(null);
+      const playedWith = await playWordAudio({
+        word,
+        audioUrl: audioUrl ?? null,
+        audioRef,
+      });
+
+      setAudioNotice(
+        playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null,
+      );
     } catch {
       setAudioNotice(
         isAutoPlayback
           ? "浏览器阻止了自动播放，请点击播放按钮继续练习。"
-          : "音频播放失败，请稍后重试。",
+          : "发音播放失败，请稍后重试。",
       );
     }
   };
@@ -136,12 +141,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
       return;
     }
 
-    if (question.hasAudio) {
-      void playAudio({ source: "auto", audioUrl: question.audioUrl });
-      return;
-    }
-
-    setAudioNotice("当前单词暂无音频，你可以直接尝试拼写或切换下一题。");
+    void playAudio({ source: "auto", audioUrl: question.audioUrl, word: question.word });
   }, [question?.wordId, testMode]);
 
   useEffect(() => {
@@ -286,10 +286,10 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
               <Button
                 className="mt-4 h-16 w-full text-lg"
                 onClick={() => {
-                  void playAudio({ source: "manual" });
+                  void playAudio({ source: "manual", word: question.word });
                 }}
               >
-                {question.hasAudio ? "播放单词音频" : "该单词暂无音频"}
+                {question.hasAudio ? "播放单词音频" : "播放单词发音（系统语音）"}
               </Button>
               <p className="mt-3 text-sm text-slate-300">{audioNotice || "播放按钮支持重复点击。"}</p>
             </div>
@@ -360,10 +360,14 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
                       variant="secondary"
                       className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-100"
                       onClick={() => {
-                        void playAudio({ source: "manual", audioUrl: feedback.audioUrl });
+                        void playAudio({
+                          source: "manual",
+                          audioUrl: feedback.audioUrl,
+                          word: feedback.correctWord,
+                        });
                       }}
                     >
-                      播放该单词音频
+                      播放该单词发音
                     </Button>
                   </div>
                 </div>

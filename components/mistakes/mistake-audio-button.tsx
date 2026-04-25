@@ -3,31 +3,23 @@
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { playWordAudio } from "@/lib/play-word-audio";
 
-export function MistakeAudioButton({ audioUrl }: { audioUrl: string | null }) {
+export function MistakeAudioButton({ audioUrl, word }: { audioUrl: string | null; word: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlay = async () => {
-    if (!audioUrl) {
-      setNotice("该单词暂无音频");
-      return;
-    }
-
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl);
-    } else if (audioRef.current.src !== audioUrl) {
-      audioRef.current.pause();
-      audioRef.current = new Audio(audioUrl);
-    }
-
-    audioRef.current.currentTime = 0;
-
     try {
-      await audioRef.current.play();
-      setNotice(null);
+      const playedWith = await playWordAudio({
+        word,
+        audioUrl,
+        audioRef,
+      });
+
+      setNotice(playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null);
     } catch {
-      setNotice("音频播放失败，请稍后重试");
+      setNotice("发音播放失败，请稍后重试");
     }
   };
 
