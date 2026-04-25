@@ -32,6 +32,12 @@ type AnswerFeedback = {
   audioUrl: string | null;
 };
 
+type SessionStats = {
+  correctCount: number;
+  wrongCount: number;
+  totalAnswered: number;
+};
+
 export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerProps) {
   const [question, setQuestion] = useState<Question | null>(null);
   const [usedWordIds, setUsedWordIds] = useState<string[]>([]);
@@ -43,6 +49,13 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
   const [audioNotice, setAudioNotice] = useState<string | null>(null);
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
   const [correctSoundEnabled, setCorrectSoundEnabled] = useState(true);
+  const [sessionStartedAt, setSessionStartedAt] = useState(() => Date.now());
+  const [sessionFinishedAt, setSessionFinishedAt] = useState<number | null>(null);
+  const [sessionStats, setSessionStats] = useState<SessionStats>({
+    correctCount: 0,
+    wrongCount: 0,
+    totalAnswered: 0,
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -65,6 +78,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
 
         if (!nextQuestion) {
           setQuestion(null);
+          setSessionFinishedAt((current) => current ?? Date.now());
           return;
         }
 
@@ -74,6 +88,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
         setLoadError(null);
         setAudioNotice(null);
         setAutoAdvanceCountdown(null);
+        setSessionFinishedAt(null);
         audioRef.current?.pause();
         audioRef.current = null;
       } catch (error) {
@@ -166,6 +181,11 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
         });
 
         setFeedback(result);
+        setSessionStats((current) => ({
+          correctCount: current.correctCount + (result.isCorrect ? 1 : 0),
+          wrongCount: current.wrongCount + (result.isCorrect ? 0 : 1),
+          totalAnswered: current.totalAnswered + 1,
+        }));
         setUsedWordIds((current) =>
           current.includes(question.wordId) ? current : [...current, question.wordId],
         );
@@ -237,6 +257,15 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
     };
   }, []);
 
+  const durationSeconds = Math.max(
+    1,
+    Math.round(((sessionFinishedAt ?? Date.now()) - sessionStartedAt) / 1000),
+  );
+  const accuracyRate =
+    sessionStats.totalAnswered > 0
+      ? Math.round((sessionStats.correctCount / sessionStats.totalAnswered) * 100)
+      : 0;
+
   return (
     <Card className="mx-auto max-w-3xl">
       <div className="mb-6">
@@ -284,7 +313,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
                     handleSubmit();
                   }
                 }}
-                placeholder="输入你听到的单词"
+                placeholder={testMode === "meaning_to_word" ? "输入对应的英文单词" : "输入你听到的单词"}
                 className="h-14 text-base"
                 disabled={Boolean(feedback)}
               />
@@ -347,21 +376,72 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
           ) : null}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 px-6 py-12 text-center">
-          <p className="text-lg font-semibold text-slate-900">当前词库本轮测试已完成</p>
-          <p className="mt-2 text-sm text-slate-500">可以回到词库页继续选择其他词库，或重新开始本词库。</p>
-          <div className="mt-5 flex justify-center gap-3">
-            <Button
-              onClick={() => {
-                setUsedWordIds([]);
-                loadQuestion([]);
-              }}
-            >
-              重新开始
-            </Button>
-            <Button variant="secondary" asChild>
-              <Link href={`/test/${wordListId}`}>返回模式选择</Link>
-            </Button>
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-dashed border-slate-300 px-6 py-12 text-center">
+            <p className="text-lg font-semibold text-slate-900">当前词库本轮测试已完成</p>
+            <p className="mt-2 text-sm text-slate-500">
+              可以回到词库页继续选择其他词库，或重新开始本词库。
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-brand-700">本次测试统计</p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                  正确率 {accuracyRate}%
+                </h2>
+              </div>
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                用时 {durationSeconds} 秒
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-4">
+              <div className="rounded-2xl bg-emerald-50 px-4 py-4">
+                <p className="text-sm text-emerald-700">正确</p>
+                <p className="mt-2 text-2xl font-black text-emerald-900">
+                  {sessionStats.correctCount}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-rose-50 px-4 py-4">
+                <p className="text-sm text-rose-700">错误</p>
+                <p className="mt-2 text-2xl font-black text-rose-900">{sessionStats.wrongCount}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-100 px-4 py-4">
+                <p className="text-sm text-slate-600">总题数</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  {sessionStats.totalAnswered}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-amber-50 px-4 py-4">
+                <p className="text-sm text-amber-700">测试模式</p>
+                <p className="mt-2 text-lg font-black text-amber-900">{modeMeta.title}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Button
+                onClick={() => {
+                  setUsedWordIds([]);
+                  setFeedback(null);
+                  setAnswer("");
+                  setSessionStartedAt(Date.now());
+                  setSessionFinishedAt(null);
+                  setSessionStats({
+                    correctCount: 0,
+                    wrongCount: 0,
+                    totalAnswered: 0,
+                  });
+                  loadQuestion([]);
+                }}
+              >
+                重新开始
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href={`/test/${wordListId}`}>返回模式选择</Link>
+              </Button>
+            </div>
           </div>
         </div>
       )}

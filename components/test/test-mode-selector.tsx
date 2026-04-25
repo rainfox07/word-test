@@ -17,7 +17,16 @@ export function TestModeSelector({ wordListId, wordListName }: TestModeSelectorP
         <p className="mt-3 text-sm text-slate-500">先选择测试方式，再进入正式测试流程。</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="flex justify-start">
+        <Link
+          href="/word-lists"
+          className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          返回词库
+        </Link>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
         {testModes.map((mode) => {
           const meta = getTestModeMeta(mode);
 

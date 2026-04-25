@@ -6,7 +6,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { testRecords, words } from "@/db/schema";
 import { requireSession } from "@/lib/auth-session";
-import { getMistakeWords, getRandomQuestion, getRecentLearningRecords } from "@/lib/data";
+import {
+  clearMistakesForUser,
+  getMistakeWords,
+  getRandomQuestion,
+  getRecentLearningRecords,
+} from "@/lib/data";
 import { ensureWordAudioUrl } from "@/lib/dictionary";
 import { TestMode } from "@/lib/test-modes";
 import { submitAnswerSchema } from "@/lib/word-import";
@@ -18,6 +23,13 @@ export async function getTestQuestionAction(
 ) {
   const session = await requireSession();
   return getRandomQuestion(wordListId, session.user.id, excludedWordIds, testMode);
+}
+
+export async function clearMistakesAction() {
+  const session = await requireSession();
+  await clearMistakesForUser(session.user.id);
+  revalidatePath("/mistakes");
+  revalidatePath("/dashboard");
 }
 
 export async function submitTestAnswerAction(payload: {

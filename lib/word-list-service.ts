@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { wordLists, words } from "@/db/schema";
 import { fetchPronunciationAudioUrl } from "@/lib/dictionary";
+import { normalizeMeaningText } from "@/lib/meaning";
 import { ParsedWord } from "@/lib/word-import";
 
 export async function getOwnedWordListOrThrow(wordListId: string, userId: string) {
@@ -53,7 +54,7 @@ export async function addWordToWordListForUser(input: {
   await db.insert(words).values({
     wordListId: input.wordListId,
     word: normalizedWord,
-    meaning: input.meaning.trim(),
+    meaning: normalizeMeaningText(input.meaning),
     pronunciationAudioUrl: audioUrl,
     createdByUserId: input.userId,
   });
@@ -96,7 +97,7 @@ export async function importWordsForUser(input: {
       .values({
         wordListId: targetWordListId,
         word: item.word.trim().toLowerCase(),
-        meaning: item.meaning.trim(),
+        meaning: normalizeMeaningText(item.meaning),
         pronunciationAudioUrl: audioUrl,
         createdByUserId: input.userId,
       })

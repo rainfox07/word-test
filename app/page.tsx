@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card";
 import { getSession } from "@/lib/auth-session";
 
 const features = [
-  "支持听音拼写，强化真实听感和拼写记忆",
-  "内置默认词库，也支持手动输入与 .txt 导入",
-  "自动记录最近测试结果和错词，便于复习回看",
+  "✅ 支持听音拼写，强化真实听感和拼写记忆",
+  "✅ 内置默认词库，也支持手动输入与 .txt 导入",
+  "✅ 自动记录最近测试结果和错词，便于复习回看",
+  "✅ 支持汉语翻译成英语测试，语音读音翻译成英语单词测试",
 ];
 
 export default async function HomePage() {
@@ -21,10 +22,10 @@ export default async function HomePage() {
             听音拼写背单词
           </span>
           <h1 className="max-w-2xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-            从音频出发练拼写，而不是只盯着单词表。
+            离开你的单词书！从音频出发练习听写
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Word Test 为每个用户隔离词库与学习记录，支持登录、导入单词、抽题测试、错词回顾，适合作为背单词网站的清晰 MVP 基线。
+            <b>克拉斯单词记忆</b> 为每个用户隔离词库与学习记录，支持登录、导入单词、抽题测试、错词回顾，适合作为背单词网站的清晰 MVP 基线。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="min-w-36">

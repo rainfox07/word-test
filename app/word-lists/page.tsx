@@ -3,11 +3,23 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { WordListForms } from "@/components/word-lists/word-list-forms";
 import { requireSession } from "@/lib/auth-session";
-import { getAccessibleWordLists } from "@/lib/data";
+import { getAccessibleWordListsWithProgress } from "@/lib/data";
+
+function getProgressStyle(rate: number) {
+  if (rate === 100) {
+    return "bg-emerald-50 text-emerald-700";
+  }
+
+  if (rate < 20) {
+    return "bg-rose-50 text-rose-700";
+  }
+
+  return "bg-amber-50 text-amber-700";
+}
 
 export default async function WordListsPage() {
   const session = await requireSession();
-  const wordLists = await getAccessibleWordLists(session.user.id);
+  const wordLists = await getAccessibleWordListsWithProgress(session.user.id);
 
   const systemLists = wordLists.filter((list) => list.isSystem);
   const ownedLists = wordLists.filter((list) => !list.isSystem);
@@ -23,7 +35,7 @@ export default async function WordListsPage() {
         <Card>
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-950">默认词库</h2>
-            <p className="mt-1 text-sm text-slate-500">系统内置内容，只读，可直接进入测试。</p>
+            <p className="mt-1 text-sm text-slate-500">系统内置内容，可直接进入测试。</p>
           </div>
           <div className="space-y-4">
             {systemLists.map((list) => (
@@ -33,9 +45,14 @@ export default async function WordListsPage() {
                     <p className="font-semibold text-slate-950">{list.name}</p>
                     <p className="mt-1 text-sm text-slate-500">{list.description || "系统默认词库"}</p>
                     <p className="mt-2 text-xs text-slate-400">{list.words.length} 个单词</p>
+                    <div className="mt-3">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getProgressStyle(list.progress.completionRate)}`}>
+                        完成度 {list.progress.completionRate}%
+                      </span>
+                    </div>
                   </div>
                   <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
-                    开始测试
+                    选择该词库
                   </Link>
                 </div>
               </div>
@@ -46,7 +63,7 @@ export default async function WordListsPage() {
         <Card>
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-950">我的词库</h2>
-            <p className="mt-1 text-sm text-slate-500">可手动添加和批量导入。</p>
+            <p className="mt-1 text-sm text-slate-500">下方可手动添加和批量导入。</p>
           </div>
           <div className="space-y-4">
             {ownedLists.length ? (
@@ -57,9 +74,14 @@ export default async function WordListsPage() {
                       <p className="font-semibold text-slate-950">{list.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{list.description || "自定义词库"}</p>
                       <p className="mt-2 text-xs text-slate-400">{list.words.length} 个单词</p>
+                      <div className="mt-3">
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getProgressStyle(list.progress.completionRate)}`}>
+                          完成度 {list.progress.completionRate}%
+                        </span>
+                      </div>
                     </div>
                     <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
-                      开始测试
+                      选择该词库
                     </Link>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { and, countDistinct, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, inArray, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { testRecords, wordLists, words } from "@/db/schema";
@@ -15,6 +15,39 @@ export async function getAccessibleWordLists(userId: string) {
   });
 }
 
+export async function getAccessibleWordListsWithProgress(userId: string) {
+  const [wordListsData, completionRows] = await Promise.all([
+    getAccessibleWordLists(userId),
+    db
+      .select({
+        wordListId: testRecords.wordListId,
+        completedWords: countDistinct(testRecords.wordId),
+      })
+      .from(testRecords)
+      .where(and(eq(testRecords.userId, userId), eq(testRecords.isCorrect, true)))
+      .groupBy(testRecords.wordListId),
+  ]);
+
+  const completionMap = new Map(
+    completionRows.map((row) => [row.wordListId, row.completedWords]),
+  );
+
+  return wordListsData.map((list) => {
+    const totalWords = list.words.length;
+    const completedWords = completionMap.get(list.id) ?? 0;
+    const completionRate = totalWords ? Math.round((completedWords / totalWords) * 100) : 0;
+
+    return {
+      ...list,
+      progress: {
+        completedWords,
+        totalWords,
+        completionRate,
+      },
+    };
+  });
+}
+
 export async function getWordListForUser(wordListId: string, userId: string) {
   return db.query.wordLists.findFirst({
     where: and(
@@ -23,7 +56,7 @@ export async function getWordListForUser(wordListId: string, userId: string) {
     ),
     with: {
       words: {
-        orderBy: [desc(words.createdAt)],
+        orderBy: [asc(words.createdAt)],
       },
     },
   });
@@ -96,6 +129,10 @@ export async function getMistakeWords(userId: string) {
       }),
     })),
   );
+}
+
+export async function clearMistakesForUser(userId: string) {
+  await db.delete(testRecords).where(and(eq(testRecords.userId, userId), eq(testRecords.isCorrect, false)));
 }
 
 export async function getRandomQuestion(

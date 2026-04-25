@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { ClearMistakesButton } from "@/components/mistakes/clear-mistakes-button";
 import { MistakeAudioButton } from "@/components/mistakes/mistake-audio-button";
 import { requireSession } from "@/lib/auth-session";
 import { getMistakeWords } from "@/lib/data";
@@ -10,9 +11,12 @@ export default async function MistakesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <p className="text-sm font-medium text-brand-700">错词本</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">只看答错过的单词</h1>
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-medium text-brand-700">错词本</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">只看答错过的单词</h1>
+        </div>
+        <ClearMistakesButton disabled={!mistakes.length} />
       </div>
 
       <Card>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeMeaningText } from "@/lib/meaning";
 
 const wordPattern = /^[A-Za-z-'\s]+$/;
 
@@ -66,7 +67,7 @@ export function parseWordsFromText(source: string) {
 
     return {
       word: normalizedWord,
-      meaning,
+      meaning: normalizeMeaningText(meaning),
     };
   });
 

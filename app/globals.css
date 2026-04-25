@@ -10,6 +10,10 @@ body {
   @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
 }
 
+.page-enter {
+  animation: page-enter 420ms ease-out;
+}
+
 a {
   @apply transition-colors;
 }
@@ -47,5 +51,17 @@ option {
 
   .hero-process-item {
     @apply rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-medium leading-6 text-slate-50;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

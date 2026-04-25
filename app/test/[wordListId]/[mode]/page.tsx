@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { WordReader } from "@/components/test/word-reader";
 import { TestRunner } from "@/components/test/test-runner";
 import { requireSession } from "@/lib/auth-session";
 import { getWordListForUser } from "@/lib/data";
@@ -28,7 +29,19 @@ export default async function TestModePage({ params }: TestModePageProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <TestRunner wordListId={wordList.id} wordListName={wordList.name} testMode={mode} />
+      {mode === "word_reader" ? (
+        <WordReader
+          wordListName={wordList.name}
+          words={wordList.words.map((word) => ({
+            id: word.id,
+            word: word.word,
+            meaning: word.meaning,
+            pronunciationAudioUrl: word.pronunciationAudioUrl,
+          }))}
+        />
+      ) : (
+        <TestRunner wordListId={wordList.id} wordListName={wordList.name} testMode={mode} />
+      )}
     </div>
   );
 }
