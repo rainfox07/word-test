@@ -121,36 +121,50 @@ export function DashboardOverview({
 
   return (
     <div className="grid gap-8">
-      <Card className="overflow-hidden border-slate-200 bg-slate-950 text-white">
+      <Card className="feature-dark-panel overflow-hidden p-7 sm:p-8">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <p className="text-sm font-medium text-sky-200">学习控制台</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight">欢迎回来，{userName}</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+            <p className="feature-dark-kicker">学习控制台</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
+              欢迎回来，{userName}
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-100">
               今天继续完成你的单词练习。从这里继续测试、复习或领读，把下一步动作做得更直接。
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild className="min-w-36">
+              <Button asChild className="min-w-36 bg-amber-400 text-slate-950 hover:bg-amber-300">
                 <Link href={primaryList ? `/test/${primaryList.id}` : "/word-lists"}>开始今日测试</Link>
               </Button>
-              <Button asChild variant="secondary" className="min-w-36 bg-white text-slate-950 hover:bg-slate-100">
+              <Button
+                asChild
+                variant="secondary"
+                className="min-w-36 border-white/20 bg-white/92 text-slate-950 hover:bg-white"
+              >
                 <Link href="/mistakes">去错词复习</Link>
               </Button>
-              <Button asChild variant="ghost" className="min-w-36 text-white hover:bg-white/10 hover:text-white">
+              <Button
+                asChild
+                variant="ghost"
+                className="min-w-36 border border-white/20 bg-white/5 text-white hover:bg-white/12 hover:text-white"
+              >
                 <Link href="/word-lists">进入词库管理</Link>
               </Button>
-              <Button asChild variant="ghost" className="min-w-36 text-white hover:bg-white/10 hover:text-white">
+              <Button
+                asChild
+                variant="ghost"
+                className="min-w-36 border border-white/20 bg-white/5 text-white hover:bg-white/12 hover:text-white"
+              >
                 <Link href={primaryList ? `/test/${primaryList.id}/word_reader` : "/word-lists"}>单词领读</Link>
               </Button>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <p className="text-sm font-medium text-sky-200">{recommendation.label}</p>
-            <h3 className="mt-3 text-2xl font-black tracking-tight text-white">{recommendation.title}</h3>
-            <p className="mt-3 text-sm leading-7 text-slate-300">{recommendation.description}</p>
-            <Button asChild className="mt-6 w-full bg-amber-400 text-slate-950 hover:bg-amber-300">
+          <div className="rounded-[1.75rem] border border-white/50 bg-white p-6 text-slate-950 shadow-sm">
+            <p className="text-sm font-semibold text-brand-700">{recommendation.label}</p>
+            <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">{recommendation.title}</h3>
+            <p className="mt-3 text-sm leading-7 text-slate-600">{recommendation.description}</p>
+            <Button asChild className="mt-6 w-full bg-slate-950 text-white hover:bg-slate-800">
               <Link href={recommendation.href}>{recommendation.cta}</Link>
             </Button>
           </div>

@@ -55,14 +55,14 @@ export default function ContactPage() {
           </div>
         </Card>
 
-        <Card className="bg-slate-950 text-white">
-          <p className="text-sm font-medium text-sky-200">需要您做什么？</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight">合作流程</h2>
+        <Card className="feature-dark-panel p-6">
+          <p className="feature-dark-kicker">需要您做什么？</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-white">合作流程</h2>
           <div className="mt-6 space-y-4">
             {workflow.map((item, index) => (
-              <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <div key={item} className="feature-dark-surface px-4 py-4">
                 <p className="text-sm font-semibold text-sky-200">步骤 {index + 1}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-200">{item}</p>
+                <p className="mt-2 text-sm leading-7 text-slate-100">{item}</p>
               </div>
             ))}
           </div>

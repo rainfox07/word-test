@@ -52,6 +52,29 @@ option {
   .hero-process-item {
     @apply rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-medium leading-6 text-slate-50;
   }
+
+  .feature-dark-panel {
+    @apply rounded-[2rem] border border-slate-800 text-white shadow-card;
+    background-image:
+      linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent 38%),
+      linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  }
+
+  .feature-dark-kicker {
+    @apply text-sm font-semibold text-sky-200;
+  }
+
+  .feature-dark-title {
+    @apply text-2xl font-black tracking-tight text-white;
+  }
+
+  .feature-dark-body {
+    @apply text-sm leading-7 text-slate-200;
+  }
+
+  .feature-dark-surface {
+    @apply rounded-3xl border border-white/10 bg-white/10;
+  }
 }
 
 @keyframes page-enter {
