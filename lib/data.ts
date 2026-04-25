@@ -63,22 +63,43 @@ export async function getWordListForUser(wordListId: string, userId: string) {
 }
 
 export async function getDashboardStats(userId: string) {
-  const [listCountResult, recentRecords, wrongWordCountResult] = await Promise.all([
-    db
-      .select({ value: sql<number>`count(*)` })
-      .from(wordLists)
-      .where(or(eq(wordLists.isSystem, true), eq(wordLists.ownerId, userId))),
-    getRecentLearningRecords(userId),
-    db
-      .select({ value: countDistinct(testRecords.wordId) })
-      .from(testRecords)
-      .where(and(eq(testRecords.userId, userId), eq(testRecords.isCorrect, false))),
-  ]);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [wordListsWithProgress, recentRecords, wrongWordCountResult, todayLearningCountResult, recentAccuracyRows] =
+    await Promise.all([
+      getAccessibleWordListsWithProgress(userId),
+      getRecentLearningRecords(userId, 5),
+      db
+        .select({ value: countDistinct(testRecords.wordId) })
+        .from(testRecords)
+        .where(and(eq(testRecords.userId, userId), eq(testRecords.isCorrect, false))),
+      db
+        .select({ value: sql<number>`count(*)` })
+        .from(testRecords)
+        .where(and(eq(testRecords.userId, userId), sql`${testRecords.answeredAt} >= ${todayStart.toISOString()}`)),
+      db
+        .select({ isCorrect: testRecords.isCorrect })
+        .from(testRecords)
+        .where(eq(testRecords.userId, userId))
+        .orderBy(desc(testRecords.answeredAt))
+        .limit(20),
+    ]);
+
+  const recentAccuracy =
+    recentAccuracyRows.length > 0
+      ? Math.round(
+          (recentAccuracyRows.filter((record) => record.isCorrect).length / recentAccuracyRows.length) * 100,
+        )
+      : 0;
 
   return {
-    wordListCount: listCountResult[0]?.value ?? 0,
+    wordListCount: wordListsWithProgress.length,
     wrongWordCount: wrongWordCountResult[0]?.value ?? 0,
+    todayLearningCount: todayLearningCountResult[0]?.value ?? 0,
+    recentAccuracy,
     recentRecords,
+    wordLists: wordListsWithProgress,
   };
 }
 
