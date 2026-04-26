@@ -14,7 +14,7 @@ export function MistakeAudioSettings() {
   }, []);
 
   return (
-    <div className="max-w-xl">
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
       <PronunciationSourceSelect value={pronunciationSource} onChange={setPronunciationSource} compact />
     </div>
   );

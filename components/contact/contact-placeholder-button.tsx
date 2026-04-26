@@ -9,7 +9,7 @@ export function ContactPlaceholderButton() {
         window.alert("添加我的微信: _3kuxD");
       }}
     >
-      联系我
+      提交反馈
     </Button>
   );
 }

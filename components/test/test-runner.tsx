@@ -262,6 +262,10 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
   }, [feedback?.isCorrect]);
 
   const handleNext = () => {
+    if (!feedback) {
+      return;
+    }
+
     const nextExcludedIds = question ? [...usedWordIds, question.wordId] : usedWordIds;
     setUsedWordIds(nextExcludedIds);
     loadQuestion(nextExcludedIds);
@@ -453,7 +457,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
               <Button
                 variant="secondary"
                 onClick={handleNext}
-                disabled={isPending}
+                disabled={isPending || !feedback}
               >
                 下一题
               </Button>

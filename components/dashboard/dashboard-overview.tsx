@@ -155,19 +155,6 @@ export function DashboardOverview({
         ))}
       </div>
 
-      <Card className="border-slate-200 bg-white">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-medium text-brand-700">推荐动作</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{recommendation.title}</h2>
-            <p className="mt-2 text-sm leading-7 text-slate-500">{recommendation.description}</p>
-          </div>
-          <Button asChild variant="secondary">
-            <Link href={recommendation.href}>{recommendation.cta}</Link>
-          </Button>
-        </div>
-      </Card>
-
       <LearningRecordList
         records={recentRecords}
         emptyText="还没有学习记录，先去词库页开始一轮测试或领读。"

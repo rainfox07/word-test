@@ -18,13 +18,28 @@ function getProgressStyle(rate: number) {
   return "bg-amber-50 text-amber-700";
 }
 
-export default async function WordListsPage() {
+export default async function WordListsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string }>;
+}) {
   const session = await requireSession();
   const wordLists = await getAccessibleWordListsWithProgress(session.user.id);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
 
   const systemLists = wordLists.filter((list) => list.isSystem);
   const ownedLists = wordLists.filter((list) => !list.isSystem);
   const textbookLists: Array<(typeof wordLists)[number]> = [];
+  const ownedPageSize = 4;
+  const totalOwnedPages = Math.max(1, Math.ceil(ownedLists.length / ownedPageSize));
+  const requestedPage = Number(resolvedSearchParams?.page ?? "1");
+  const currentOwnedPage = Number.isFinite(requestedPage)
+    ? Math.min(Math.max(1, requestedPage), totalOwnedPages)
+    : 1;
+  const paginatedOwnedLists = ownedLists.slice(
+    (currentOwnedPage - 1) * ownedPageSize,
+    currentOwnedPage * ownedPageSize,
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -53,8 +68,14 @@ export default async function WordListsPage() {
                       </span>
                     </div>
                   </div>
-                  <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
+                  <Link
+                    href={`/test/${list.id}`}
+                    className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 hover:text-brand-800"
+                  >
                     选择该词库
+                    <span className="translate-x-0 text-base transition-transform duration-200 group-hover:translate-x-1">
+                      →
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -78,8 +99,14 @@ export default async function WordListsPage() {
                       <p className="mt-1 text-sm text-slate-500">{list.description || "课本词库"}</p>
                       <p className="mt-2 text-xs text-slate-400">{list.words.length} 个单词</p>
                     </div>
-                    <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
+                    <Link
+                      href={`/test/${list.id}`}
+                      className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 hover:text-brand-800"
+                    >
                       选择该词库
+                      <span className="translate-x-0 text-base transition-transform duration-200 group-hover:translate-x-1">
+                        →
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -100,9 +127,9 @@ export default async function WordListsPage() {
           </div>
           <div className="space-y-4">
             {ownedLists.length ? (
-              ownedLists.map((list) => (
+              paginatedOwnedLists.map((list) => (
                 <div key={list.id} className="rounded-2xl border border-slate-200 px-4 py-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col gap-4">
                     <div>
                       <p className="font-semibold text-slate-950">{list.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{list.description || "自定义词库"}</p>
@@ -113,11 +140,21 @@ export default async function WordListsPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-start gap-2 md:items-end">
-                      <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
+                    <div className="flex items-end justify-between gap-3">
+                      <Link
+                        href={`/test/${list.id}`}
+                        className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 hover:text-brand-800"
+                      >
                         选择该词库
+                        <span className="translate-x-0 text-base transition-transform duration-200 group-hover:translate-x-1">
+                          →
+                        </span>
                       </Link>
-                      <DeleteWordListButton wordListId={list.id} />
+                      <DeleteWordListButton
+                        wordListId={list.id}
+                        currentPage={currentOwnedPage}
+                        currentPageCount={paginatedOwnedLists.length}
+                      />
                     </div>
                   </div>
                 </div>
@@ -128,6 +165,35 @@ export default async function WordListsPage() {
               </div>
             )}
           </div>
+          {ownedLists.length > ownedPageSize ? (
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <p className="text-xs text-slate-500">
+                第 {currentOwnedPage} / {totalOwnedPages} 页
+              </p>
+              <div className="flex gap-2">
+                <Link
+                  href={`/word-lists?page=${Math.max(1, currentOwnedPage - 1)}`}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    currentOwnedPage === 1
+                      ? "pointer-events-none bg-slate-100 text-slate-400"
+                      : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  上一页
+                </Link>
+                <Link
+                  href={`/word-lists?page=${Math.min(totalOwnedPages, currentOwnedPage + 1)}`}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    currentOwnedPage === totalOwnedPages
+                      ? "pointer-events-none bg-slate-100 text-slate-400"
+                      : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  下一页
+                </Link>
+              </div>
+            </div>
+          ) : null}
         </Card>
       </div>
 

@@ -20,8 +20,12 @@ export function SiteHeader({ user }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="text-lg font-bold tracking-tight text-slate-950">
+        <Link
+          href="/"
+          className="group relative inline-flex items-center text-lg font-bold tracking-tight text-slate-950 transition-all duration-300 hover:scale-[1.03] hover:tracking-wide"
+        >
           克拉斯单词记忆
+          <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-brand-500 via-sky-400 to-amber-300 transition-transform duration-300 group-hover:scale-x-100" />
         </Link>
 
         <nav className="hidden items-center gap-5 md:flex">

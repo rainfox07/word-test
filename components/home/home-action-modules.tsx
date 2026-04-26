@@ -5,28 +5,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-const tutorialSteps = [
-  { label: "导入词库", tone: "bg-brand-100 text-brand-700" },
-  { label: "播放音频", tone: "bg-sky-100 text-sky-700" },
-  { label: "拼写作答", tone: "bg-amber-100 text-amber-700" },
-  { label: "记录结果", tone: "bg-emerald-100 text-emerald-700" },
-];
-
-const cooperationHighlights = ["定制词库", "品牌化页面", "专属功能", "App 打包"];
+const tutorialSteps = ["导入词库", "播放音频", "拼写作答", "记录结果"];
+const feedbackHighlights = ["问题反馈", "功能建议", "学习场景", "内容建议"];
 
 export function HomeActionModules() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-stretch">
       <Card className="relative overflow-hidden border-slate-200 bg-white p-0">
-        <div className="grid h-full gap-6 p-6 sm:p-7">
+        <div className="grid h-full gap-5 p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-brand-700">快速上手</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
                 不会使用？先看一眼视频教程
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
-                把导入、听音、拼写和记录这一整套流程快速看一遍，第一次使用会更顺手。
+                先快速了解导入、听音、拼写和记录的基本流程，第一次使用会更顺手。
               </p>
             </div>
 
@@ -37,38 +31,21 @@ export function HomeActionModules() {
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {tutorialSteps.map((step, index) => (
-                <div
-                  key={step.label}
-                  className="rounded-2xl border border-white bg-white px-4 py-4 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white">
-                      {index + 1}
-                    </span>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${step.tone}`}>
-                      {step.label}
-                    </span>
-                  </div>
-                  <div className="mt-4 h-2 rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-slate-600" style={{ width: `${35 + index * 20}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {tutorialSteps.map((step, index) => (
+              <span
+                key={step}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-700 text-[10px] text-white">
+                  {index + 1}
+                </span>
+                {step}
+              </span>
+            ))}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                新手引导
-              </span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                教程入口
-              </span>
-            </div>
             <Button
               onClick={() => {
                 window.alert("视频未录制");
@@ -86,24 +63,24 @@ export function HomeActionModules() {
           <div className="relative">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="feature-dark-kicker">合作联系</p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight text-white">面向老师与团队的定制入口</h2>
+                <p className="feature-dark-kicker">反馈与建议</p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-white">个人学习工具仍在持续完善中</h2>
               </div>
               <div className="feature-dark-surface flex h-16 w-16 items-center justify-center text-3xl text-amber-300">
-                ⌘
+                ✦
               </div>
             </div>
 
             <p className="mt-4 max-w-lg text-sm leading-7 text-slate-100">
-              如果你需要专属词库、品牌展示、定制页面或教学场景能力，这里是更明确的合作入口。
+              这是一个个人非经营性学习工具项目，目前主要用于单词练习、词库管理和学习辅助。使用过程中遇到问题，
+              或希望增加新的学习功能，都可以通过这里提交反馈。
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {cooperationHighlights.map((item) => (
-                <div key={item} className="feature-dark-surface px-4 py-4">
-                  <p className="text-sm font-semibold text-white">{item}</p>
-                  <p className="mt-1 text-xs leading-6 text-slate-200">更适合学校、团队和定制交付场景</p>
-                </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {feedbackHighlights.map((item) => (
+                <span key={item} className="feature-dark-surface px-3 py-2 text-xs font-semibold text-white">
+                  {item}
+                </span>
               ))}
             </div>
           </div>
@@ -112,12 +89,12 @@ export function HomeActionModules() {
         <Card className="border border-amber-200 bg-amber-50/80">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-amber-700">商务合作</p>
-              <p className="mt-2 text-base font-semibold text-slate-950">查看合作说明页，了解可定制内容与交付流程。</p>
+              <p className="text-sm font-semibold text-amber-700">反馈入口</p>
+              <p className="mt-2 text-base font-semibold text-slate-950">如果你有问题、建议或学习场景反馈，可以从这里提交。</p>
             </div>
             <div className="flex h-full items-center">
               <Button asChild className="bg-slate-700 text-white hover:bg-slate-600">
-                <Link href="/contact">联系我</Link>
+                <Link href="/contact">提交反馈</Link>
               </Button>
             </div>
           </div>
