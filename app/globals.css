@@ -10,10 +10,6 @@ body {
   @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
 }
 
-body.home-intro-running [data-site-brand="true"] {
-  opacity: 0;
-}
-
 .page-enter {
   animation: page-enter 420ms ease-out;
 }
@@ -81,68 +77,45 @@ option {
   }
 }
 
-.home-intro-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  background: rgba(248, 250, 252, 0.88);
-  backdrop-filter: blur(2px);
-  animation: home-intro-overlay-fade 180ms ease-out 620ms forwards;
-}
-
-.home-intro-brand {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  color: #0f172a;
-  animation: home-intro-brand-travel 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  white-space: nowrap;
-}
-
 .home-intro-shell [data-home-intro] {
   opacity: 0;
   transform: translateY(20px);
 }
 
 .home-intro-ready [data-home-intro="badge"] {
-  animation: home-intro-fade-up 260ms ease-out 640ms both;
+  animation: home-intro-fade-up 150ms ease-out 120ms both;
 }
 
 .home-intro-ready [data-home-intro="title"] {
-  animation: home-intro-fade-up 320ms ease-out 820ms both;
+  animation: home-intro-fade-up 180ms ease-out 220ms both;
 }
 
 .home-intro-ready [data-home-intro="description"] {
-  animation: home-intro-fade-up 300ms ease-out 1060ms both;
+  animation: home-intro-fade-up 180ms ease-out 340ms both;
 }
 
 .home-intro-ready [data-home-intro="actions"] {
-  animation: home-intro-fade-up-scale 300ms ease-out 1140ms both;
+  animation: home-intro-fade-up-scale 180ms ease-out 420ms both;
 }
 
 .home-intro-ready [data-home-intro="process"] {
-  animation: home-intro-fade-up 360ms ease-out 1260ms both;
+  animation: home-intro-fade-up 220ms ease-out 520ms both;
 }
 
 .home-intro-ready [data-home-intro="process-item"]:nth-of-type(1) {
-  animation: home-intro-fade-up 260ms ease-out 1360ms both;
+  animation: home-intro-fade-up 180ms ease-out 600ms both;
 }
 
 .home-intro-ready [data-home-intro="process-item"]:nth-of-type(2) {
-  animation: home-intro-fade-up 260ms ease-out 1420ms both;
+  animation: home-intro-fade-up 180ms ease-out 660ms both;
 }
 
 .home-intro-ready [data-home-intro="process-item"]:nth-of-type(3) {
-  animation: home-intro-fade-up 260ms ease-out 1480ms both;
+  animation: home-intro-fade-up 180ms ease-out 720ms both;
 }
 
 .home-intro-ready [data-home-intro="process-item"]:nth-of-type(4) {
-  animation: home-intro-fade-up 260ms ease-out 1540ms both;
+  animation: home-intro-fade-up 180ms ease-out 780ms both;
 }
 
 @keyframes page-enter {
@@ -154,28 +127,6 @@ option {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes home-intro-brand-travel {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(calc(-50vw + clamp(5rem, 11vw, 8rem)), calc(-50vh + 2.25rem)) scale(0.36);
-  }
-}
-
-@keyframes home-intro-overlay-fade {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
   }
 }
 
@@ -203,38 +154,14 @@ option {
   }
 }
 
-@media (max-width: 640px) {
-  @keyframes home-intro-brand-travel {
-    from {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    to {
-      opacity: 1;
-      transform: translate(calc(-50vw + 6rem), calc(-50vh + 2.15rem)) scale(0.34);
-    }
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
-  .home-intro-overlay,
-  .home-intro-brand,
   .home-intro-ready [data-home-intro] {
     animation: none !important;
-  }
-
-  .home-intro-overlay {
-    display: none;
   }
 
   .home-intro-shell [data-home-intro] {
     opacity: 1;
     transform: none;
-  }
-
-  body.home-intro-running [data-site-brand="true"] {
-    opacity: 1;
   }
 }
