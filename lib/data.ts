@@ -4,15 +4,21 @@ import { db } from "@/db";
 import { testRecords, wordLists, words } from "@/db/schema";
 import { ensureWordAudioUrl } from "@/lib/dictionary";
 import { TestMode } from "@/lib/test-modes";
+import { getDisplayMeaning, toWordView } from "@/lib/word-entry";
 
 export async function getAccessibleWordLists(userId: string) {
-  return db.query.wordLists.findMany({
+  const lists = await db.query.wordLists.findMany({
     where: or(eq(wordLists.isSystem, true), eq(wordLists.ownerId, userId)),
     with: {
       words: true,
     },
     orderBy: [desc(wordLists.isSystem), desc(wordLists.createdAt)],
   });
+
+  return lists.map((list) => ({
+    ...list,
+    words: list.words.map((word) => toWordView(word)),
+  }));
 }
 
 export async function getAccessibleWordListsWithProgress(userId: string) {
@@ -60,6 +66,19 @@ export async function getWordListForUser(wordListId: string, userId: string) {
       },
     },
   });
+}
+
+export async function getNormalizedWordListForUser(wordListId: string, userId: string) {
+  const wordList = await getWordListForUser(wordListId, userId);
+
+  if (!wordList) {
+    return null;
+  }
+
+  return {
+    ...wordList,
+    words: wordList.words.map((word) => toWordView(word)),
+  };
 }
 
 export async function getDashboardStats(userId: string) {
@@ -113,6 +132,7 @@ export async function getRecentLearningRecords(userId: string, limit = 8) {
       testMode: testRecords.testMode,
       word: words.word,
       meaning: words.meaning,
+      meaningsJson: words.meaningsJson,
       wordListName: wordLists.name,
     })
     .from(testRecords)
@@ -120,7 +140,16 @@ export async function getRecentLearningRecords(userId: string, limit = 8) {
     .innerJoin(wordLists, eq(wordLists.id, testRecords.wordListId))
     .where(eq(testRecords.userId, userId))
     .orderBy(desc(testRecords.answeredAt))
-    .limit(limit);
+    .limit(limit)
+    .then((records) =>
+      records.map((record) => ({
+        ...record,
+        meaning: getDisplayMeaning({
+          meaning: record.meaning,
+          meaningsJson: record.meaningsJson,
+        }),
+      })),
+    );
 }
 
 export async function getMistakeWords(userId: string) {
@@ -129,6 +158,9 @@ export async function getMistakeWords(userId: string) {
       wordId: words.id,
       word: words.word,
       meaning: words.meaning,
+      meaningsJson: words.meaningsJson,
+      phonetic: words.phonetic,
+      partOfSpeech: words.partOfSpeech,
       pronunciationAudioUrl: words.pronunciationAudioUrl,
       lastWrongAt: sql<string>`max(${testRecords.answeredAt})`,
       wordListName: wordLists.name,
@@ -137,12 +169,22 @@ export async function getMistakeWords(userId: string) {
     .innerJoin(words, eq(words.id, testRecords.wordId))
     .innerJoin(wordLists, eq(wordLists.id, testRecords.wordListId))
     .where(and(eq(testRecords.userId, userId), eq(testRecords.isCorrect, false)))
-    .groupBy(words.id, words.word, words.meaning, words.pronunciationAudioUrl, wordLists.name)
+    .groupBy(
+      words.id,
+      words.word,
+      words.meaning,
+      words.meaningsJson,
+      words.phonetic,
+      words.partOfSpeech,
+      words.pronunciationAudioUrl,
+      wordLists.name,
+    )
     .orderBy(desc(sql`max(${testRecords.answeredAt})`));
 
   return Promise.all(
     wrongRecords.map(async (record) => ({
       ...record,
+      meaning: getDisplayMeaning(record),
       pronunciationAudioUrl: await ensureWordAudioUrl({
         wordId: record.wordId,
         word: record.word,
@@ -162,7 +204,7 @@ export async function getRandomQuestion(
   excludedWordIds: string[],
   testMode: TestMode,
 ) {
-  const list = await getWordListForUser(wordListId, userId);
+  const list = await getNormalizedWordListForUser(wordListId, userId);
 
   if (!list) {
     return null;
@@ -183,8 +225,10 @@ export async function getRandomQuestion(
 
   return {
     wordId: randomWord.id,
-    word: randomWord.word,
-    meaning: randomWord.meaning,
+    word: randomWord.displayWord,
+    meaning: randomWord.displayMeaning,
+    phonetic: randomWord.phonetic,
+    partOfSpeech: randomWord.partOfSpeech,
     audioUrl,
     hasAudio: Boolean(audioUrl),
     remainingCount: availableWords.length,

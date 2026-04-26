@@ -14,6 +14,7 @@ import {
 } from "@/lib/data";
 import { ensureWordAudioUrl } from "@/lib/dictionary";
 import { TestMode } from "@/lib/test-modes";
+import { getDisplayMeaning, isAcceptedSpelling } from "@/lib/word-entry";
 import { submitAnswerSchema } from "@/lib/word-import";
 
 export async function getTestQuestionAction(
@@ -59,9 +60,8 @@ export async function submitTestAnswerAction(payload: {
     throw new Error("你没有权限提交这道题");
   }
 
-  const normalizedAnswer = values.userAnswer.trim().toLowerCase();
-  const normalizedWord = selectedWord.word.trim().toLowerCase();
-  const isCorrect = normalizedAnswer === normalizedWord;
+  const normalizedAnswer = values.userAnswer.trim().toLowerCase().replace(/\s+/g, " ");
+  const isCorrect = isAcceptedSpelling(selectedWord, normalizedAnswer);
   const audioUrl = await ensureWordAudioUrl({
     wordId: selectedWord.id,
     word: selectedWord.word,
@@ -85,7 +85,7 @@ export async function submitTestAnswerAction(payload: {
     isCorrect,
     userAnswer: normalizedAnswer,
     correctWord: selectedWord.word,
-    meaning: selectedWord.meaning,
+    meaning: getDisplayMeaning(selectedWord),
     audioUrl,
   };
 }

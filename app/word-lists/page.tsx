@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
+import { DeleteWordListButton } from "@/components/word-lists/delete-word-list-button";
 import { WordListForms } from "@/components/word-lists/word-list-forms";
 import { requireSession } from "@/lib/auth-session";
 import { getAccessibleWordListsWithProgress } from "@/lib/data";
@@ -112,9 +113,12 @@ export default async function WordListsPage() {
                         </span>
                       </div>
                     </div>
-                    <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
-                      选择该词库
-                    </Link>
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                      <Link href={`/test/${list.id}`} className="text-sm font-semibold text-brand-700">
+                        选择该词库
+                      </Link>
+                      <DeleteWordListButton wordListId={list.id} />
+                    </div>
                   </div>
                 </div>
               ))

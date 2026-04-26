@@ -37,7 +37,6 @@ function getRecommendation(
 ) {
   if (wrongWordCount > 0) {
     return {
-      label: "优先动作",
       title: "先回顾错词，把容易卡住的单词补上",
       description: `你当前还有 ${wrongWordCount} 个待复习错词，先把这些词重新过一遍更划算。`,
       href: "/mistakes",
@@ -51,10 +50,9 @@ function getRecommendation(
 
   if (inProgressList) {
     return {
-      label: "继续学习",
       title: `继续完成 ${inProgressList.name}`,
       description: `这个词库已经完成 ${inProgressList.progress.completionRate}%，再推进几轮就能收尾。`,
-      href: `/test/${inProgressList.id}`,
+      href: "/word-lists",
       cta: "继续测试",
     };
   }
@@ -63,16 +61,14 @@ function getRecommendation(
 
   if (freshList) {
     return {
-      label: "开始新一轮",
       title: `从 ${freshList.name} 开始今天的练习`,
       description: "先做一轮测试，系统会自动记录结果和错词，后面复习会更轻松。",
-      href: `/test/${freshList.id}`,
+      href: "/word-lists",
       cta: "开始今日测试",
     };
   }
 
   return {
-    label: "下一步",
     title: "先去准备一个词库",
     description: "当前还没有可学习单词，先在词库页创建或导入一些内容。",
     href: "/word-lists",
@@ -89,7 +85,6 @@ export function DashboardOverview({
   wordLists,
   userName,
 }: DashboardOverviewProps) {
-  const primaryList = wordLists.find((list) => list.progress.totalWords > 0);
   const recommendation = getRecommendation(wordLists, wrongWordCount);
 
   const overviewCards = [
@@ -129,39 +124,18 @@ export function DashboardOverview({
               欢迎回来，{userName}
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-100">
-              今天继续完成你的单词练习。从这里继续测试、复习或领读，把下一步动作做得更直接。
+              今天继续完成你的单词练习。从这里进入词库选择，开始新一轮听写或复习。
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8">
               <Button asChild className="min-w-36 bg-amber-400 text-slate-950 hover:bg-amber-300">
-                <Link href={primaryList ? `/test/${primaryList.id}` : "/word-lists"}>开始今日测试</Link>
-              </Button>
-              <Button
-                asChild
-                variant="secondary"
-                className="min-w-36 border-white/20 bg-white/92 text-slate-950 hover:bg-white"
-              >
-                <Link href="/mistakes">去错词复习</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                className="min-w-36 border border-white/20 bg-white/5 text-white hover:bg-white/12 hover:text-white"
-              >
-                <Link href="/word-lists">进入词库管理</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                className="min-w-36 border border-white/20 bg-white/5 text-white hover:bg-white/12 hover:text-white"
-              >
-                <Link href={primaryList ? `/test/${primaryList.id}/word_reader` : "/word-lists"}>单词领读</Link>
+                <Link href="/word-lists">开始今日测试</Link>
               </Button>
             </div>
           </div>
 
           <div className="rounded-[1.75rem] border border-white/50 bg-white p-6 text-slate-950 shadow-sm">
-            <p className="text-sm font-semibold text-brand-700">{recommendation.label}</p>
+            <p className="text-sm font-semibold text-brand-700">推荐动作</p>
             <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">{recommendation.title}</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600">{recommendation.description}</p>
             <Button asChild className="mt-6 w-full bg-slate-950 text-white hover:bg-slate-800">

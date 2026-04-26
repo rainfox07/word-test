@@ -6,10 +6,10 @@ export function ContactPlaceholderButton() {
   return (
     <Button
       onClick={() => {
-        window.alert("联系方式后续补充");
+        window.alert("添加我的微信: _3kuxD");
       }}
     >
-      联系方式后续补充
+      联系我
     </Button>
   );
 }

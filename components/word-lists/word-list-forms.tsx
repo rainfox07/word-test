@@ -99,7 +99,7 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
       <Card>
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-950">手动新增单词</h2>
-          <p className="mt-1 text-sm text-slate-500">输入单词和中文含义，系统会尝试自动拉取音频。</p>
+          <p className="mt-1 text-sm text-slate-500">支持多个中文意思、可接受拼写、音标和词性；缺失的可选字段不会报错。</p>
         </div>
         <form ref={addWordFormRef} action={addWordFormAction} className="space-y-4">
           <label className="block space-y-2">
@@ -122,7 +122,19 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
           </label>
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">中文释义</span>
-            <Input name="meaning" placeholder="示例、例子" required />
+            <Input name="meaning" placeholder="示例、例子、榜样" required />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-slate-700">可接受拼写</span>
+            <Input name="acceptedAnswers" placeholder="colour, practice 等，可选" />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-slate-700">音标</span>
+            <Input name="phonetic" placeholder="/ˈsæmpəl/，可选" />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-slate-700">词性</span>
+            <Input name="partOfSpeech" placeholder="n. / v. / adj.，可选" />
           </label>
           <FormFeedback state={addWordState} />
           <SubmitButton className="w-full">添加单词</SubmitButton>
@@ -133,7 +145,7 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-950">批量导入</h2>
           <p className="mt-1 text-sm text-slate-500">
-            支持粘贴或上传 `.txt`。格式：`word:中文;word:中文`
+            支持旧格式 `word:中文;word:中文`，也支持扩展格式 `word|accepted1,accepted2|/phonetic/|n.:中文1,中文2`
           </p>
         </div>
         <form

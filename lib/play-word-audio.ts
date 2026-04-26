@@ -35,6 +35,24 @@ async function playAudioElement(audioRef: MutableRefObject<HTMLAudioElement | nu
 
   audioRef.current.currentTime = 0;
   await audioRef.current.play();
+
+  await new Promise<void>((resolve) => {
+    const currentAudio = audioRef.current;
+
+    if (!currentAudio) {
+      resolve();
+      return;
+    }
+
+    const finish = () => {
+      currentAudio.onended = null;
+      currentAudio.onpause = null;
+      resolve();
+    };
+
+    currentAudio.onended = finish;
+    currentAudio.onpause = finish;
+  });
 }
 
 async function fetchFreeDictionaryAudioUrl(word: string, currentAudioUrl: string | null) {

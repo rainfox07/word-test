@@ -13,6 +13,8 @@ type ReaderWord = {
   id: string;
   word: string;
   meaning: string;
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
   pronunciationAudioUrl: string | null;
 };
 
@@ -190,10 +192,17 @@ export function WordReader({
         if (!shouldContinue) {
           return;
         }
+
+        if (index < repeatCount - 1) {
+          await new Promise<void>((resolve) => {
+            timerRef.current = setTimeout(() => resolve(), Math.min(intervalMs, 900));
+          });
+        }
       }
 
       if (currentIndex === words.length - 1) {
         setIsCompleted(true);
+        setNotice("本轮单词领读已结束。");
       }
 
       if (!autoPlayNext) {
@@ -307,6 +316,11 @@ export function WordReader({
                 <h2 className="text-5xl font-black tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
                   {currentWord.word}
                 </h2>
+                {(currentWord.partOfSpeech || currentWord.phonetic) ? (
+                  <p className="mx-auto max-w-3xl text-lg text-slate-500 sm:text-xl">
+                    {[currentWord.partOfSpeech, currentWord.phonetic].filter(Boolean).join("  ")}
+                  </p>
+                ) : null}
                 <p className="mx-auto max-w-3xl text-2xl leading-10 text-slate-600 sm:text-3xl">
                   {currentWord.meaning}
                 </p>

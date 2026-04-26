@@ -1,7 +1,4 @@
-import Link from "next/link";
-
 import { ContactPlaceholderButton } from "@/components/contact/contact-placeholder-button";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const capabilities = [
@@ -31,14 +28,6 @@ export default function ContactPage() {
           面向老师、学校、教育工作者与团队的定制化词汇学习解决方案。如果您希望定制专属词库、
           品牌化页面或专属学习功能，欢迎联系我。
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild>
-            <Link href="/">返回主页</Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link href="/word-lists">查看现有产品</Link>
-          </Button>
-        </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
@@ -77,9 +66,6 @@ export default function ContactPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <ContactPlaceholderButton />
-          <Button asChild variant="secondary">
-            <Link href="/">回到首页</Link>
-          </Button>
         </div>
       </section>
     </div>

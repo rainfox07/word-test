@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { ClearMistakesButton } from "@/components/mistakes/clear-mistakes-button";
 import { MistakeAudioButton } from "@/components/mistakes/mistake-audio-button";
+import { MistakeAudioSettings } from "@/components/mistakes/mistake-audio-settings";
 import { requireSession } from "@/lib/auth-session";
 import { getMistakeWords } from "@/lib/data";
 import { formatDateTime } from "@/lib/utils";
@@ -18,6 +19,8 @@ export default async function MistakesPage() {
         </div>
         <ClearMistakesButton disabled={!mistakes.length} />
       </div>
+
+      <MistakeAudioSettings />
 
       <Card>
         <div className="space-y-4">

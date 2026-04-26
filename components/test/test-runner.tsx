@@ -385,7 +385,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
       ) : question ? (
         <div className="space-y-6">
           {testMode === "audio_to_word" ? (
-            <div className="rounded-3xl bg-slate-950 p-6 text-white">
+            <div className="rounded-3xl bg-slate-700 p-6 text-white">
               <div className="flex flex-col gap-4">
                 <div>
                   <p className="text-sm text-sky-200">音频练习区</p>

@@ -30,7 +30,7 @@ export function HomeActionModules() {
               </p>
             </div>
 
-            <div className="rounded-[1.75rem] bg-slate-950 p-4 text-white shadow-card">
+            <div className="rounded-[1.75rem] bg-slate-700 p-4 text-white shadow-card">
               <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-white/10 text-3xl">
                 ▶
               </div>
@@ -45,7 +45,7 @@ export function HomeActionModules() {
                   className="rounded-2xl border border-white bg-white px-4 py-4 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white">
                       {index + 1}
                     </span>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${step.tone}`}>
@@ -53,7 +53,7 @@ export function HomeActionModules() {
                     </span>
                   </div>
                   <div className="mt-4 h-2 rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-slate-900" style={{ width: `${35 + index * 20}%` }} />
+                    <div className="h-2 rounded-full bg-slate-600" style={{ width: `${35 + index * 20}%` }} />
                   </div>
                 </div>
               ))}
@@ -115,12 +115,9 @@ export function HomeActionModules() {
               <p className="text-sm font-semibold text-amber-700">商务合作</p>
               <p className="mt-2 text-base font-semibold text-slate-950">查看合作说明页，了解可定制内容与交付流程。</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild className="bg-slate-950 text-white hover:bg-slate-800">
+            <div className="flex h-full items-center">
+              <Button asChild className="bg-slate-700 text-white hover:bg-slate-600">
                 <Link href="/contact">联系我</Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/contact">查看合作方案</Link>
               </Button>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { WordReader } from "@/components/test/word-reader";
 import { TestRunner } from "@/components/test/test-runner";
 import { requireSession } from "@/lib/auth-session";
-import { getWordListForUser } from "@/lib/data";
+import { getNormalizedWordListForUser } from "@/lib/data";
 import { isTestMode } from "@/lib/test-modes";
 
 type TestModePageProps = {
@@ -21,7 +21,7 @@ export default async function TestModePage({ params }: TestModePageProps) {
     notFound();
   }
 
-  const wordList = await getWordListForUser(wordListId, session.user.id);
+  const wordList = await getNormalizedWordListForUser(wordListId, session.user.id);
 
   if (!wordList) {
     notFound();
@@ -34,8 +34,10 @@ export default async function TestModePage({ params }: TestModePageProps) {
           wordListName={wordList.name}
           words={wordList.words.map((word) => ({
             id: word.id,
-            word: word.word,
-            meaning: word.meaning,
+            word: word.displayWord,
+            meaning: word.displayMeaning,
+            phonetic: word.phonetic,
+            partOfSpeech: word.partOfSpeech,
             pronunciationAudioUrl: word.pronunciationAudioUrl,
           }))}
         />

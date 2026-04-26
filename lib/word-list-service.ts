@@ -3,8 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { wordLists, words } from "@/db/schema";
 import { fetchPronunciationAudioUrl } from "@/lib/dictionary";
-import { normalizeMeaningText } from "@/lib/meaning";
 import { ParsedWord } from "@/lib/word-import";
+import { toStoredWordData } from "@/lib/word-entry";
 
 export async function getOwnedWordListOrThrow(wordListId: string, userId: string) {
   const wordList = await db.query.wordLists.findFirst({
@@ -44,18 +44,27 @@ export async function addWordToWordListForUser(input: {
   userId: string;
   wordListId: string;
   word: string;
-  meaning: string;
+  meanings: string[];
+  acceptedAnswers?: string[];
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
 }) {
   await getOwnedWordListOrThrow(input.wordListId, input.userId);
 
   const normalizedWord = input.word.trim().toLowerCase();
   const audioUrl = await fetchPronunciationAudioUrl(normalizedWord);
+  const storedWordData = toStoredWordData({
+    displayWord: normalizedWord,
+    meanings: input.meanings,
+    acceptedAnswers: input.acceptedAnswers,
+    phonetic: input.phonetic,
+    partOfSpeech: input.partOfSpeech,
+    pronunciationAudioUrl: audioUrl,
+  });
 
   await db.insert(words).values({
     wordListId: input.wordListId,
-    word: normalizedWord,
-    meaning: normalizeMeaningText(input.meaning),
-    pronunciationAudioUrl: audioUrl,
+    ...storedWordData,
     createdByUserId: input.userId,
   });
 }
@@ -91,14 +100,20 @@ export async function importWordsForUser(input: {
 
   for (const item of input.parsedWords) {
     const audioUrl = await fetchPronunciationAudioUrl(item.word);
+    const storedWordData = toStoredWordData({
+      displayWord: item.word,
+      meanings: item.meanings,
+      acceptedAnswers: item.acceptedAnswers,
+      phonetic: item.phonetic,
+      partOfSpeech: item.partOfSpeech,
+      pronunciationAudioUrl: audioUrl,
+    });
 
     const insertResult = await db
       .insert(words)
       .values({
         wordListId: targetWordListId,
-        word: item.word.trim().toLowerCase(),
-        meaning: normalizeMeaningText(item.meaning),
-        pronunciationAudioUrl: audioUrl,
+        ...storedWordData,
         createdByUserId: input.userId,
       })
       .onConflictDoNothing()

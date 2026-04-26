@@ -1,13 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 import { requireSession } from "@/lib/auth-session";
 import {
   addWordToWordListForUser,
   createWordListForUser,
+  getOwnedWordListOrThrow,
   importWordsForUser,
 } from "@/lib/word-list-service";
+import { db } from "@/db";
+import { wordLists } from "@/db/schema";
+import { normalizeMeanings } from "@/lib/word-entry";
 import { addWordSchema, createWordListSchema, importWordsSchema, parseWordsFromText } from "@/lib/word-import";
 
 export type ActionResult = {
@@ -56,14 +61,20 @@ export async function addWordAction(
     const values = addWordSchema.parse({
       wordListId: formData.get("wordListId"),
       word: formData.get("word"),
+      acceptedAnswers: formData.get("acceptedAnswers"),
       meaning: formData.get("meaning"),
+      phonetic: formData.get("phonetic"),
+      partOfSpeech: formData.get("partOfSpeech"),
     });
 
     await addWordToWordListForUser({
       userId: session.user.id,
       wordListId: values.wordListId,
       word: values.word,
-      meaning: values.meaning,
+      meanings: normalizeMeanings(values.meaning),
+      acceptedAnswers: values.acceptedAnswers ? values.acceptedAnswers.split(/[，,;；/|]+/g) : [],
+      phonetic: values.phonetic || null,
+      partOfSpeech: values.partOfSpeech || null,
     });
 
     revalidatePath("/word-lists");
@@ -74,6 +85,29 @@ export async function addWordAction(
     return {
       success: false,
       message: error instanceof Error ? error.message : "添加单词失败",
+    };
+  }
+}
+
+export async function deleteWordListAction(wordListId: string): Promise<ActionResult> {
+  try {
+    const session = await requireSession();
+    const ownedWordList = await getOwnedWordListOrThrow(wordListId, session.user.id);
+
+    await db.delete(wordLists).where(eq(wordLists.id, ownedWordList.id));
+
+    revalidatePath("/word-lists");
+    revalidatePath("/dashboard");
+    revalidatePath("/mistakes");
+
+    return {
+      success: true,
+      message: `词库“${ownedWordList.name}”已删除`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "删除词库失败",
     };
   }
 }

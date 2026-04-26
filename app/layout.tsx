@@ -27,15 +27,18 @@ export default async function RootLayout({
         </main>
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-1 px-4 py-6 text-center text-sm leading-6 text-slate-500 sm:px-6 lg:px-8">
-            <p>&copy; 2026 Lihyu</p>
-            <p>Based on Next.js 15 + Drizzle + Better Auth</p>
             <p>
-              Github URL :{" "}
-              <Link href="https://github.com/rainfox07/word-test" className="hover:text-slate-900">
-                https://github.com/rainfox07/word-test
+              &copy; 2026 Lihyu |{" "}
+              <Link
+                href="https://github.com/rainfox07/word-test"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="hover:text-slate-900"
+              >
+                Github
               </Link>
             </p>
-            <p>Contact me at Wechat : _3kuxD</p>
+            <p>Based on Next.js 15 + Drizzle + Better Auth</p>
           </div>
         </footer>
       </body>

@@ -35,10 +35,10 @@ option {
 
 @layer components {
   .hero-process-card {
-    @apply rounded-3xl border border-slate-800 bg-slate-950 text-slate-50 shadow-card;
+    @apply rounded-3xl border border-slate-300 bg-slate-700 text-slate-50 shadow-card;
     background-image:
-      linear-gradient(135deg, rgba(14, 165, 233, 0.12), transparent 34%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+      linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   }
 
   .hero-process-eyebrow {
@@ -54,10 +54,10 @@ option {
   }
 
   .feature-dark-panel {
-    @apply rounded-[2rem] border border-slate-800 text-white shadow-card;
+    @apply rounded-[2rem] border border-slate-300 text-white shadow-card;
     background-image:
-      linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent 38%),
-      linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      linear-gradient(135deg, rgba(245, 158, 11, 0.08), transparent 38%),
+      linear-gradient(180deg, #475569 0%, #334155 100%);
   }
 
   .feature-dark-kicker {

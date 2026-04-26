@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizeMeaningText } from "@/lib/meaning";
+import { normalizeAcceptedAnswers, normalizeMeanings } from "@/lib/word-entry";
 
 const wordPattern = /^[A-Za-z-'\s]+$/;
 
@@ -21,7 +21,10 @@ export const addWordSchema = z.object({
     .min(1, "请输入英文单词")
     .max(80, "单词长度不能超过 80")
     .regex(wordPattern, "单词仅支持英文字母、空格、连字符和单引号"),
+  acceptedAnswers: z.string().trim().max(200, "可接受拼写不能超过 200 个字符").optional().or(z.literal("")),
   meaning: z.string().trim().min(1, "请输入中文释义").max(200, "释义不能超过 200 个字符"),
+  phonetic: z.string().trim().max(80, "音标不能超过 80 个字符").optional().or(z.literal("")),
+  partOfSpeech: z.string().trim().max(20, "词性不能超过 20 个字符").optional().or(z.literal("")),
 });
 
 export const importWordsSchema = z.object({
@@ -39,8 +42,26 @@ export const submitAnswerSchema = z.object({
 
 export type ParsedWord = {
   word: string;
-  meaning: string;
+  meanings: string[];
+  acceptedAnswers?: string[];
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
 };
+
+function parseExtendedWordSegment(segment: string) {
+  const parts = segment.split("|").map((item) => item.trim());
+
+  if (parts.length === 1) {
+    return { wordPart: parts[0], acceptedAnswers: [], phonetic: null, partOfSpeech: null };
+  }
+
+  return {
+    wordPart: parts[0] ?? "",
+    acceptedAnswers: parts[1] ? normalizeAcceptedAnswers(parts[1]) : [],
+    phonetic: parts[2] || null,
+    partOfSpeech: parts[3] || null,
+  };
+}
 
 export function parseWordsFromText(source: string) {
   const normalizedSource = source.replaceAll("：", ":").replace(/\r\n/g, "\n").trim();
@@ -57,17 +78,30 @@ export function parseWordsFromText(source: string) {
   const invalidSegments: string[] = [];
 
   const parsed = segments.map((segment, index) => {
-    const [word, ...meaningParts] = segment.split(":");
+    const [leftPart, ...meaningParts] = segment.split(":");
     const meaning = meaningParts.join(":").trim();
-    const normalizedWord = word?.trim().toLowerCase() ?? "";
+    const { wordPart, acceptedAnswers, phonetic, partOfSpeech } = parseExtendedWordSegment(
+      leftPart?.trim() ?? "",
+    );
+    const normalizedWord = wordPart.trim().toLowerCase();
+    const normalizedMeanings = normalizeMeanings(meaning);
 
-    if (!word || !meaningParts.length || !normalizedWord || !meaning || !wordPattern.test(normalizedWord)) {
+    if (
+      !leftPart ||
+      !meaningParts.length ||
+      !normalizedWord ||
+      !normalizedMeanings.length ||
+      !wordPattern.test(normalizedWord)
+    ) {
       invalidSegments.push(`第 ${index + 1} 项：${segment}`);
     }
 
     return {
       word: normalizedWord,
-      meaning: normalizeMeaningText(meaning),
+      meanings: normalizedMeanings,
+      acceptedAnswers,
+      phonetic,
+      partOfSpeech,
     };
   });
 
@@ -77,5 +111,5 @@ export function parseWordsFromText(source: string) {
     );
   }
 
-  return parsed.filter((item): item is ParsedWord => Boolean(item.word && item.meaning));
+  return parsed.filter((item) => Boolean(item.word && item.meanings.length));
 }
