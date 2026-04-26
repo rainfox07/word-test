@@ -22,6 +22,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
+          data-site-brand="true"
           className="group relative inline-flex items-center text-lg font-bold tracking-tight text-slate-950 transition-all duration-300 hover:scale-[1.03] hover:tracking-wide"
         >
           克拉斯单词记忆

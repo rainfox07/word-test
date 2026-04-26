@@ -8,12 +8,10 @@ import { Button } from "@/components/ui/button";
 
 export function DeleteWordListButton({
   wordListId,
-  currentPage,
-  currentPageCount,
+  onDeleted,
 }: {
   wordListId: string;
-  currentPage: number;
-  currentPageCount: number;
+  onDeleted?: () => void;
 }) {
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,11 +35,7 @@ export function DeleteWordListButton({
             setNotice(result.message);
 
             if (result.success) {
-              if (currentPage > 1 && currentPageCount <= 1) {
-                router.replace(`/word-lists?page=${currentPage - 1}`);
-                return;
-              }
-
+              onDeleted?.();
               router.refresh();
             }
           });
