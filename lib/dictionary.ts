@@ -1,56 +1,8 @@
 import { env } from "./env";
 import { db } from "@/db";
 import { words } from "@/db/schema";
+import { extractAudioUrl, normalizeAudioUrl, type DictionaryEntry } from "@/lib/extract-audio-url";
 import { eq } from "drizzle-orm";
-
-type DictionaryEntry = {
-  meanings?: Array<Record<string, unknown>>;
-  phonetics?: Array<{
-    audio?: string;
-  }>;
-};
-
-function normalizeAudioUrl(audioUrl: string | null | undefined) {
-  const normalizedValue = audioUrl?.trim();
-
-  if (!normalizedValue) {
-    return null;
-  }
-
-  return normalizedValue.startsWith("//") ? `https:${normalizedValue}` : normalizedValue;
-}
-
-export function extractAudioUrl(payload: DictionaryEntry[]) {
-  const queue: unknown[] = [...payload];
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-
-    if (Array.isArray(current)) {
-      queue.push(...current);
-      continue;
-    }
-
-    if (!current || typeof current !== "object") {
-      continue;
-    }
-
-    const record = current as Record<string, unknown>;
-    const audioUrl = normalizeAudioUrl(typeof record.audio === "string" ? record.audio : null);
-
-    if (audioUrl) {
-      return audioUrl;
-    }
-
-    Object.values(record).forEach((value) => {
-      if (Array.isArray(value) || (value && typeof value === "object")) {
-        queue.push(value);
-      }
-    });
-  }
-
-  return null;
-}
 
 export async function fetchPronunciationAudioUrl(word: string) {
   const normalizedWord = word.trim().toLowerCase();

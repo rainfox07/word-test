@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { getTestQuestionAction, submitTestAnswerAction } from "@/app/actions/test-actions";
+import { PronunciationSourceSelect } from "@/components/audio/pronunciation-source-select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { playWordAudio } from "@/lib/play-word-audio";
+import { type PronunciationSource } from "@/lib/audio-source";
+import { getStoredPronunciationSource, playWordAudio } from "@/lib/play-word-audio";
 import { TestMode, getTestModeMeta } from "@/lib/test-modes";
 
 type TestRunnerProps = {
@@ -50,6 +52,11 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
   const [audioNotice, setAudioNotice] = useState<string | null>(null);
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
   const [correctSoundEnabled, setCorrectSoundEnabled] = useState(true);
+  const [pronunciationSource, setPronunciationSource] = useState<PronunciationSource>("auto");
+  const [isTestStarted, setIsTestStarted] = useState(testMode !== "audio_to_word");
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(testMode !== "audio_to_word");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoPlayFailed, setAutoPlayFailed] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState(() => Date.now());
   const [sessionFinishedAt, setSessionFinishedAt] = useState<number | null>(null);
   const [sessionStats, setSessionStats] = useState<SessionStats>({
@@ -61,6 +68,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastAutoPlayedWordIdRef = useRef<string | null>(null);
   const modeMeta = getTestModeMeta(testMode);
 
   useEffect(() => {
@@ -69,6 +77,8 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
     if (storedValue === "false") {
       setCorrectSoundEnabled(false);
     }
+
+    setPronunciationSource(getStoredPronunciationSource());
   }, []);
 
   const loadQuestion = (excludedIds: string[]) => {
@@ -78,6 +88,8 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
         setHasFetched(true);
 
         if (!nextQuestion) {
+          stopCurrentPlayback();
+          audioRef.current = null;
           setQuestion(null);
           setSessionFinishedAt((current) => current ?? Date.now());
           return;
@@ -90,7 +102,7 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
         setAudioNotice(null);
         setAutoAdvanceCountdown(null);
         setSessionFinishedAt(null);
-        audioRef.current?.pause();
+        stopCurrentPlayback();
         audioRef.current = null;
       } catch (error) {
         setHasFetched(true);
@@ -103,46 +115,76 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
     loadQuestion([]);
   }, []);
 
-  const playAudio = async (options?: {
-    source?: "auto" | "manual";
+  const stopCurrentPlayback = () => {
+    audioRef.current?.pause();
+    window.speechSynthesis?.cancel();
+  };
+
+  const playAudio = async (
+    options?: {
+      mode?: "manual" | "auto";
+      context?: "initial" | "next" | "retry" | "result";
+      suppressNotice?: boolean;
+      skipWhenLocked?: boolean;
+    } & {
     audioUrl?: string | null;
     word?: string;
-  }) => {
+    },
+  ) => {
     const audioUrl = options?.audioUrl ?? question?.audioUrl ?? feedback?.audioUrl;
     const word = options?.word ?? question?.word ?? feedback?.correctWord;
-    const isAutoPlayback = options?.source === "auto";
+    const playbackMode = options?.mode ?? "manual";
+
+    if (options?.skipWhenLocked && !isAudioUnlocked) {
+      return;
+    }
 
     if (!word) {
       setAudioNotice("当前单词暂时无法播放，请稍后重试。");
       return;
     }
 
+    stopCurrentPlayback();
+    setIsPlaying(true);
+
     try {
       const playedWith = await playWordAudio({
         word,
         audioUrl: audioUrl ?? null,
         audioRef,
+        preferredSource: pronunciationSource,
       });
 
-      setAudioNotice(
-        playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null,
-      );
-    } catch {
-      setAudioNotice(
-        isAutoPlayback
-          ? "浏览器阻止了自动播放，请点击播放按钮继续练习。"
-          : "发音播放失败，请稍后重试。",
-      );
+      setAutoPlayFailed(false);
+
+      if (!options?.suppressNotice) {
+        setAudioNotice(playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null);
+      }
+    } catch (error) {
+      if (playbackMode === "auto") {
+        setAutoPlayFailed(true);
+        setAudioNotice(
+          autoPlayFailed
+            ? "读音播放失败，请点击再听一次或切换读音来源。"
+            : "浏览器可能阻止了自动播放，请点击再听一次，或在浏览器设置中允许本站播放声音。",
+        );
+        console.warn("[word-audio:auto-play-failed]", {
+          source: pronunciationSource,
+          word,
+          context: options?.context ?? "next",
+          error,
+        });
+      } else {
+        setAudioNotice(
+          error instanceof Error
+            ? error.message
+            : "当前无法播放读音，请稍后重试或切换读音来源",
+        );
+      }
+    } finally {
+      setIsPlaying(false);
     }
   };
-
-  useEffect(() => {
-    if (testMode !== "audio_to_word" || !question) {
-      return;
-    }
-
-    void playAudio({ source: "auto", audioUrl: question.audioUrl, word: question.word });
-  }, [question?.wordId, testMode]);
 
   useEffect(() => {
     if (testMode !== "audio_to_word") {
@@ -253,9 +295,30 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
       if (autoAdvanceTimerRef.current) {
         clearTimeout(autoAdvanceTimerRef.current);
       }
-      audioRef.current?.pause();
+      stopCurrentPlayback();
     };
   }, []);
+
+  useEffect(() => {
+    if (testMode !== "audio_to_word" || !question || !isTestStarted || !isAudioUnlocked || feedback) {
+      return;
+    }
+
+    if (lastAutoPlayedWordIdRef.current === question.wordId) {
+      return;
+    }
+
+    lastAutoPlayedWordIdRef.current = question.wordId;
+
+    void playAudio({
+      mode: "auto",
+      context: "next",
+      word: question.word,
+      audioUrl: question.audioUrl,
+      skipWhenLocked: true,
+      suppressNotice: false,
+    });
+  }, [question?.wordId, testMode, isTestStarted, isAudioUnlocked, feedback]);
 
   const durationSeconds = Math.max(
     1,
@@ -278,20 +341,85 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
         <div className="rounded-3xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500">
           正在加载测试题...
         </div>
+      ) : testMode === "audio_to_word" && !isTestStarted ? (
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-8">
+            <p className="text-sm font-medium text-brand-700">启用单词读音</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">先开启音频，再开始听写</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              为了让系统在听写时自动播放每个单词的读音，请先点击下方按钮开启音频。部分浏览器可能会限制自动播放，
+              如果没有声音，可以点击“再听一次”。
+            </p>
+
+            <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+              <PronunciationSourceSelect value={pronunciationSource} onChange={setPronunciationSource} compact />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button
+                onClick={() => {
+                  if (question?.wordId) {
+                    lastAutoPlayedWordIdRef.current = question.wordId;
+                  }
+                  setIsTestStarted(true);
+                  setIsAudioUnlocked(true);
+                  setSessionStartedAt(Date.now());
+                  setAutoPlayFailed(false);
+                  void playAudio({
+                    mode: "manual",
+                    context: "initial",
+                    word: question?.word,
+                    audioUrl: question?.audioUrl,
+                  });
+                }}
+                disabled={!question}
+              >
+                开始听写并启用音频
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href={`/test/${wordListId}`}>返回模式选择</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : question ? (
         <div className="space-y-6">
           {testMode === "audio_to_word" ? (
             <div className="rounded-3xl bg-slate-950 p-6 text-white">
-              <p className="text-sm text-sky-200">音频练习区</p>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-sm text-sky-200">音频练习区</p>
+                  <p className="mt-2 text-sm text-slate-200">
+                    当前题目会在切换后自动播放一次。如果没有声音，可以点击“再听一次”或切换读音来源。
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white/95 p-4 text-slate-950">
+                  <PronunciationSourceSelect
+                    value={pronunciationSource}
+                    onChange={setPronunciationSource}
+                    compact
+                  />
+                </div>
+              </div>
               <Button
                 className="mt-4 h-16 w-full text-lg"
+                disabled={isPlaying}
                 onClick={() => {
-                  void playAudio({ source: "manual", word: question.word });
+                  void playAudio({
+                    mode: "manual",
+                    context: "retry",
+                    word: question.word,
+                    audioUrl: question.audioUrl,
+                  });
                 }}
               >
-                {question.hasAudio ? "播放单词音频" : "播放单词发音（系统语音）"}
+                {isPlaying ? "播放中..." : pronunciationSource === "tts" ? "再听一次（系统语音）" : "再听一次"}
               </Button>
-              <p className="mt-3 text-sm text-slate-300">{audioNotice || "播放按钮支持重复点击。"}</p>
+              <p className="mt-3 text-sm text-slate-300">
+                {audioNotice ||
+                  "自动模式会依次尝试有道、Free Dictionary 和系统语音；播放失败不会影响你继续答题。"}
+              </p>
             </div>
           ) : (
             <div className="rounded-3xl border border-slate-200 bg-white px-6 py-6">
@@ -322,7 +450,11 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
               <Button onClick={handleSubmit} disabled={isPending || !answer.trim() || Boolean(feedback)}>
                 {isPending ? "提交中..." : "提交答案"}
               </Button>
-              <Button variant="secondary" onClick={handleNext} disabled={isPending}>
+              <Button
+                variant="secondary"
+                onClick={handleNext}
+                disabled={isPending}
+              >
                 下一题
               </Button>
               <Button
@@ -361,7 +493,8 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
                       className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-100"
                       onClick={() => {
                         void playAudio({
-                          source: "manual",
+                          mode: "manual",
+                          context: "result",
                           audioUrl: feedback.audioUrl,
                           word: feedback.correctWord,
                         });
@@ -432,6 +565,10 @@ export function TestRunner({ wordListId, wordListName, testMode }: TestRunnerPro
                   setAnswer("");
                   setSessionStartedAt(Date.now());
                   setSessionFinishedAt(null);
+                  lastAutoPlayedWordIdRef.current = null;
+                  setIsTestStarted(true);
+                  setIsAudioUnlocked(true);
+                  setAutoPlayFailed(false);
                   setSessionStats({
                     correctCount: 0,
                     wrongCount: 0,

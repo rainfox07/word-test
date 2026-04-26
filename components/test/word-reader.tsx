@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { PronunciationSourceSelect } from "@/components/audio/pronunciation-source-select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { playWordAudio } from "@/lib/play-word-audio";
+import { type PronunciationSource } from "@/lib/audio-source";
+import { getStoredPronunciationSource, playWordAudio } from "@/lib/play-word-audio";
 
 type ReaderWord = {
   id: string;
@@ -118,6 +120,7 @@ export function WordReader({
   const [isPaused, setIsPaused] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [pronunciationSource, setPronunciationSource] = useState<PronunciationSource>("auto");
   const [playNonce, setPlayNonce] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -154,11 +157,16 @@ export function WordReader({
         word: currentWord?.word ?? "",
         audioUrl: currentWord?.pronunciationAudioUrl ?? null,
         audioRef,
+        preferredSource: pronunciationSource,
       });
 
       setNotice(playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null);
-    } catch {
-      setNotice("发音播放失败，请稍后重试。");
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "当前无法播放读音，请稍后重试或切换读音来源",
+      );
       setIsPlaying(false);
       return false;
     }
@@ -225,6 +233,10 @@ export function WordReader({
       }
     };
   }, [currentIndex, currentWord?.id, hasStarted, isPaused, autoPlayNext, intervalMs, repeatCount, endStrategy, playNonce, words.length]);
+
+  useEffect(() => {
+    setPronunciationSource(getStoredPronunciationSource());
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -366,6 +378,9 @@ export function WordReader({
               <Button asChild variant="ghost">
                 <Link href="/">返回主页</Link>
               </Button>
+            </div>
+            <div className="mt-5">
+              <PronunciationSourceSelect value={pronunciationSource} onChange={setPronunciationSource} compact />
             </div>
           </Card>
 

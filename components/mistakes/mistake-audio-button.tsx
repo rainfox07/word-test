@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { playWordAudio } from "@/lib/play-word-audio";
+import { getStoredPronunciationSource, playWordAudio } from "@/lib/play-word-audio";
 
 export function MistakeAudioButton({ audioUrl, word }: { audioUrl: string | null; word: string }) {
   const [notice, setNotice] = useState<string | null>(null);
@@ -15,11 +15,16 @@ export function MistakeAudioButton({ audioUrl, word }: { audioUrl: string | null
         word,
         audioUrl,
         audioRef,
+        preferredSource: getStoredPronunciationSource(),
       });
 
       setNotice(playedWith === "tts" ? "未找到词典音频，将使用系统语音朗读。" : null);
-    } catch {
-      setNotice("发音播放失败，请稍后重试");
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "当前无法播放读音，请稍后重试或切换读音来源",
+      );
     }
   };
 
