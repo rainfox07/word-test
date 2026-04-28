@@ -7,5 +7,9 @@ export function normalizeLoginEmail(value: string) {
     return DEFAULT_ACCOUNT_EMAIL;
   }
 
+  if (/^1\d{10}$/.test(normalized)) {
+    return `phone_${normalized}@local.user`;
+  }
+
   return normalized;
 }

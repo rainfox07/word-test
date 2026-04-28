@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  phone: text("phone").unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
   createdAt: text("created_at").notNull(),
@@ -63,6 +64,21 @@ export const verifications = sqliteTable("verifications", {
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),
 });
+
+export const invitationCodes = sqliteTable(
+  "invitation_codes",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    code: text("code").notNull().unique(),
+    used: integer("used", { mode: "boolean" }).notNull().default(false),
+    usedByUserId: text("used_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    usedAt: text("used_at"),
+    createdAt: timestamp(),
+  },
+  (table) => [index("invitation_codes_used_idx").on(table.used)],
+);
 
 export const wordLists = sqliteTable(
   "word_lists",
@@ -147,6 +163,14 @@ export const testRecords = sqliteTable(
 export const usersRelations = relations(users, ({ many }) => ({
   wordLists: many(wordLists),
   testRecords: many(testRecords),
+  invitationCodes: many(invitationCodes),
+}));
+
+export const invitationCodesRelations = relations(invitationCodes, ({ one }) => ({
+  usedByUser: one(users, {
+    fields: [invitationCodes.usedByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const wordListsRelations = relations(wordLists, ({ one, many }) => ({
@@ -186,6 +210,7 @@ export const testRecordsRelations = relations(testRecords, ({ one }) => ({
 }));
 
 export type User = typeof users.$inferSelect;
+export type InvitationCode = typeof invitationCodes.$inferSelect;
 export type WordList = typeof wordLists.$inferSelect;
 export type Word = typeof words.$inferSelect;
 export type TestRecord = typeof testRecords.$inferSelect;

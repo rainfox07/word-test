@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 
 import { db } from "../db";
-import { accounts, users, wordLists, words } from "../db/schema";
+import { accounts, invitationCodes, users, wordLists, words } from "../db/schema";
 import { DEFAULT_ACCOUNT_EMAIL } from "../lib/default-account";
 import { fetchPronunciationAudioUrl } from "../lib/dictionary";
 import { toStoredWordData } from "../lib/word-entry";
@@ -200,6 +200,7 @@ async function ensureDefaultAdminAccount() {
       id: "admin",
       name: "admin",
       email: DEFAULT_ACCOUNT_EMAIL,
+      phone: null,
       emailVerified: true,
       image: null,
       createdAt: timestamp,
@@ -226,8 +227,26 @@ async function ensureDefaultAdminAccount() {
   }
 }
 
+async function ensureInvitationCodes() {
+  for (let code = 2510560001; code <= 2510560300; code += 1) {
+    const stringCode = String(code);
+    const existing = await db.query.invitationCodes.findFirst({
+      where: eq(invitationCodes.code, stringCode),
+    });
+
+    if (existing) {
+      continue;
+    }
+
+    await db.insert(invitationCodes).values({
+      code: stringCode,
+    });
+  }
+}
+
 async function main() {
   await ensureDefaultAdminAccount();
+  await ensureInvitationCodes();
 
   for (const list of defaultWordLists) {
     const listId = await upsertSystemWordList(list.name, list.description);
