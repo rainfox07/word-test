@@ -151,7 +151,6 @@ export function WordListForms({ ownedWordLists }: { ownedWordLists: OwnedWordLis
         <form
           ref={importFormRef}
           action={importFormAction}
-          encType="multipart/form-data"
           className="space-y-4"
         >
           <label className="block space-y-2">

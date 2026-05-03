@@ -6,7 +6,7 @@ import { getAdminDashboardData } from "@/lib/admin-data";
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ sort?: string }>;
+  searchParams?: Promise<{ sort?: string; section?: string }>;
 }) {
   const isAuthenticated = await hasAdminAccess();
 
@@ -20,7 +20,16 @@ export default async function AdminPage({
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const sortBy = resolvedSearchParams?.sort === "accuracy" ? "accuracy" : "practice";
+  const section = resolvedSearchParams?.section;
+  const activeSection =
+    section === "users" ||
+    section === "errors" ||
+    section === "word-lists" ||
+    section === "activities" ||
+    section === "system"
+      ? section
+      : "overview";
   const data = await getAdminDashboardData(sortBy);
 
-  return <AdminPanel data={data} />;
+  return <AdminPanel data={data} activeSection={activeSection} />;
 }
