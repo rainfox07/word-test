@@ -4,9 +4,10 @@ import { and, eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 
 import { db } from "../db";
-import { accounts, invitationCodes, users, wordLists, words } from "../db/schema";
+import { accounts, invitationCodes, textbookScopes, textbooks, users, wordLists, words } from "../db/schema";
 import { DEFAULT_ACCOUNT_EMAIL } from "../lib/default-account";
 import { fetchPronunciationAudioUrl } from "../lib/dictionary";
+import { textbookCatalog, type TextbookWordSeed } from "../lib/textbook-catalog";
 import { toStoredWordData } from "../lib/word-entry";
 import { parseWordsFromText } from "../lib/word-import";
 
@@ -114,25 +115,114 @@ const defaultWordLists = [
   },
 ];
 
-async function upsertSystemWordList(name: string, description: string) {
+async function upsertManagedWordList(input: {
+  name: string;
+  description: string;
+  sourceType: "system" | "textbook";
+}) {
   const existing = await db.query.wordLists.findFirst({
-    where: and(eq(wordLists.name, name), eq(wordLists.isSystem, true)),
+    where: and(eq(wordLists.name, input.name), eq(wordLists.isSystem, true), eq(wordLists.sourceType, input.sourceType)),
   });
 
   if (existing) {
+    await db
+      .update(wordLists)
+      .set({
+        description: input.description,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(wordLists.id, existing.id));
     return existing.id;
   }
 
   const [inserted] = await db
     .insert(wordLists)
     .values({
-      name,
-      description,
-      sourceType: "system",
+      name: input.name,
+      description: input.description,
+      sourceType: input.sourceType,
       isSystem: true,
       ownerId: null,
     })
     .returning({ id: wordLists.id });
+
+  return inserted.id;
+}
+
+async function upsertTextbook(input: {
+  name: string;
+  description: string;
+  sourceFileName: string;
+}) {
+  const existing = await db.query.textbooks.findFirst({
+    where: eq(textbooks.name, input.name),
+  });
+
+  if (existing) {
+    await db
+      .update(textbooks)
+      .set({
+        description: input.description,
+        sourceFileName: input.sourceFileName,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(textbooks.id, existing.id));
+
+    return existing.id;
+  }
+
+  const [inserted] = await db
+    .insert(textbooks)
+    .values({
+      name: input.name,
+      description: input.description,
+      sourceFileName: input.sourceFileName,
+    })
+    .returning({ id: textbooks.id });
+
+  return inserted.id;
+}
+
+async function upsertTextbookScope(input: {
+  textbookId: string;
+  parentId: string | null;
+  title: string;
+  pathKey: string;
+  scopeType: "book" | "unit" | "section";
+  sortOrder: number;
+  wordListId: string;
+}) {
+  const existing = await db.query.textbookScopes.findFirst({
+    where: and(eq(textbookScopes.textbookId, input.textbookId), eq(textbookScopes.pathKey, input.pathKey)),
+  });
+
+  if (existing) {
+    await db
+      .update(textbookScopes)
+      .set({
+        parentId: input.parentId,
+        title: input.title,
+        scopeType: input.scopeType,
+        sortOrder: input.sortOrder,
+        wordListId: input.wordListId,
+      })
+      .where(eq(textbookScopes.id, existing.id));
+
+    return existing.id;
+  }
+
+  const [inserted] = await db
+    .insert(textbookScopes)
+    .values({
+      textbookId: input.textbookId,
+      parentId: input.parentId,
+      title: input.title,
+      pathKey: input.pathKey,
+      scopeType: input.scopeType,
+      sortOrder: input.sortOrder,
+      wordListId: input.wordListId,
+    })
+    .returning({ id: textbookScopes.id });
 
   return inserted.id;
 }
@@ -185,6 +275,142 @@ async function removeObsoleteSystemWords(wordListId: string, validWords: string[
   for (const existingWord of existingWords) {
     if (!validWords.includes(existingWord.word)) {
       await db.delete(words).where(eq(words.id, existingWord.id));
+    }
+  }
+}
+
+function mergeWordSeeds(wordsToMerge: TextbookWordSeed[]) {
+  const merged = new Map<string, TextbookWordSeed>();
+
+  for (const item of wordsToMerge) {
+    const key = item.word.trim().toLowerCase();
+    const existing = merged.get(key);
+
+    if (!existing) {
+      merged.set(key, {
+        word: key,
+        meanings: [...item.meanings],
+        acceptedAnswers: item.acceptedAnswers ? [...item.acceptedAnswers] : undefined,
+        phonetic: item.phonetic ?? null,
+        partOfSpeech: item.partOfSpeech ?? null,
+      });
+      continue;
+    }
+
+    existing.meanings = [...new Set([...existing.meanings, ...item.meanings])];
+    existing.acceptedAnswers = [...new Set([...(existing.acceptedAnswers ?? []), ...(item.acceptedAnswers ?? [])])];
+    existing.phonetic = existing.phonetic || item.phonetic || null;
+    existing.partOfSpeech =
+      existing.partOfSpeech && item.partOfSpeech
+        ? [...new Set([existing.partOfSpeech, item.partOfSpeech])].join("; ")
+        : existing.partOfSpeech || item.partOfSpeech || null;
+  }
+
+  return [...merged.values()];
+}
+
+function toPathKey(input: string) {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function syncWordSeedToWordList(input: {
+  wordListId: string;
+  words: TextbookWordSeed[];
+}) {
+  const validWords = input.words.map((item) => item.word.trim().toLowerCase());
+  await removeObsoleteSystemWords(input.wordListId, validWords);
+
+  for (const item of input.words) {
+    const audioUrl = await fetchPronunciationAudioUrl(item.word);
+
+    await upsertWord({
+      wordListId: input.wordListId,
+      word: item.word,
+      meanings: item.meanings,
+      acceptedAnswers: item.acceptedAnswers,
+      phonetic: item.phonetic ?? null,
+      partOfSpeech: item.partOfSpeech ?? null,
+      pronunciationAudioUrl: audioUrl,
+    });
+  }
+}
+
+async function seedTextbooks() {
+  for (const textbook of textbookCatalog) {
+    const textbookId = await upsertTextbook({
+      name: textbook.name,
+      description: textbook.description,
+      sourceFileName: textbook.sourceFileName,
+    });
+
+    const rootWords = mergeWordSeeds(textbook.units.flatMap((unit) => unit.sections.flatMap((section) => section.words)));
+    const rootWordListId = await upsertManagedWordList({
+      name: `${textbook.name} / 全册`,
+      description: `${textbook.name} 全册词汇`,
+      sourceType: "textbook",
+    });
+    await syncWordSeedToWordList({
+      wordListId: rootWordListId,
+      words: rootWords,
+    });
+
+    const rootScopeId = await upsertTextbookScope({
+      textbookId,
+      parentId: null,
+      title: "全册",
+      pathKey: "book",
+      scopeType: "book",
+      sortOrder: 0,
+      wordListId: rootWordListId,
+    });
+
+    for (const [unitIndex, unit] of textbook.units.entries()) {
+      const unitWords = mergeWordSeeds(unit.sections.flatMap((section) => section.words));
+      const unitWordListId = await upsertManagedWordList({
+        name: `${textbook.name} / ${unit.title}`,
+        description: `${unit.title} 词汇`,
+        sourceType: "textbook",
+      });
+      await syncWordSeedToWordList({
+        wordListId: unitWordListId,
+        words: unitWords,
+      });
+
+      const unitPathKey = `unit-${toPathKey(unit.title)}`;
+      const unitScopeId = await upsertTextbookScope({
+        textbookId,
+        parentId: rootScopeId,
+        title: unit.title,
+        pathKey: unitPathKey,
+        scopeType: "unit",
+        sortOrder: unitIndex + 1,
+        wordListId: unitWordListId,
+      });
+
+      for (const [sectionIndex, section] of unit.sections.entries()) {
+        const sectionWordListId = await upsertManagedWordList({
+          name: `${textbook.name} / ${unit.title} / ${section.title}`,
+          description: `${unit.title} · ${section.title}`,
+          sourceType: "textbook",
+        });
+        await syncWordSeedToWordList({
+          wordListId: sectionWordListId,
+          words: section.words,
+        });
+
+        await upsertTextbookScope({
+          textbookId,
+          parentId: unitScopeId,
+          title: section.title,
+          pathKey: `${unitPathKey}/section-${toPathKey(section.title)}`,
+          scopeType: "section",
+          sortOrder: sectionIndex + 1,
+          wordListId: sectionWordListId,
+        });
+      }
     }
   }
 }
@@ -249,7 +475,11 @@ async function main() {
   await ensureInvitationCodes();
 
   for (const list of defaultWordLists) {
-    const listId = await upsertSystemWordList(list.name, list.description);
+    const listId = await upsertManagedWordList({
+      name: list.name,
+      description: list.description,
+      sourceType: "system",
+    });
     const validWords = list.words.map((item) => item.word);
 
     await removeObsoleteSystemWords(listId, validWords);
@@ -268,6 +498,8 @@ async function main() {
       });
     }
   }
+
+  await seedTextbooks();
 
   console.log("Seed completed.");
 }

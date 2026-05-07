@@ -90,13 +90,54 @@ export const wordLists = sqliteTable(
     name: text("name").notNull(),
     description: text("description"),
     isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false),
-    sourceType: text("source_type", { enum: ["system", "custom"] }).notNull(),
+    sourceType: text("source_type", { enum: ["system", "custom", "textbook"] }).notNull(),
     createdAt: timestamp(),
     updatedAt: text("updated_at")
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
   (table) => [index("word_lists_owner_id_idx").on(table.ownerId)],
+);
+
+export const textbooks = sqliteTable(
+  "textbooks",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull().unique(),
+    description: text("description"),
+    sourceFileName: text("source_file_name"),
+    createdAt: timestamp(),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [index("textbooks_name_idx").on(table.name)],
+);
+
+export const textbookScopes = sqliteTable(
+  "textbook_scopes",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    textbookId: text("textbook_id")
+      .notNull()
+      .references(() => textbooks.id, { onDelete: "cascade" }),
+    parentId: text("parent_id"),
+    title: text("title").notNull(),
+    pathKey: text("path_key").notNull(),
+    scopeType: text("scope_type", { enum: ["book", "unit", "section"] }).notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    wordListId: text("word_list_id").references(() => wordLists.id, { onDelete: "set null" }),
+    createdAt: timestamp(),
+  },
+  (table) => [
+    uniqueIndex("textbook_scopes_textbook_path_idx").on(table.textbookId, table.pathKey),
+    index("textbook_scopes_parent_id_idx").on(table.parentId),
+    index("textbook_scopes_word_list_id_idx").on(table.wordListId),
+  ],
 );
 
 export const words = sqliteTable(
@@ -143,7 +184,7 @@ export const testRecords = sqliteTable(
       .notNull()
       .references(() => wordLists.id, { onDelete: "cascade" }),
     testMode: text("test_mode", {
-      enum: ["audio_to_word", "meaning_to_word"],
+      enum: ["audio_to_word", "meaning_to_word", "spot_check"],
     })
       .notNull()
       .default("audio_to_word"),
@@ -180,6 +221,30 @@ export const wordListsRelations = relations(wordLists, ({ one, many }) => ({
   }),
   words: many(words),
   testRecords: many(testRecords),
+  textbookScopes: many(textbookScopes),
+}));
+
+export const textbooksRelations = relations(textbooks, ({ many }) => ({
+  scopes: many(textbookScopes),
+}));
+
+export const textbookScopesRelations = relations(textbookScopes, ({ one, many }) => ({
+  textbook: one(textbooks, {
+    fields: [textbookScopes.textbookId],
+    references: [textbooks.id],
+  }),
+  parent: one(textbookScopes, {
+    fields: [textbookScopes.parentId],
+    references: [textbookScopes.id],
+    relationName: "textbook_scope_children",
+  }),
+  children: many(textbookScopes, {
+    relationName: "textbook_scope_children",
+  }),
+  wordList: one(wordLists, {
+    fields: [textbookScopes.wordListId],
+    references: [wordLists.id],
+  }),
 }));
 
 export const wordsRelations = relations(words, ({ one, many }) => ({
@@ -214,5 +279,7 @@ export type InvitationCode = typeof invitationCodes.$inferSelect;
 export type WordList = typeof wordLists.$inferSelect;
 export type Word = typeof words.$inferSelect;
 export type TestRecord = typeof testRecords.$inferSelect;
+export type Textbook = typeof textbooks.$inferSelect;
+export type TextbookScope = typeof textbookScopes.$inferSelect;
 
 export const countAll = sql<number>`count(*)`;

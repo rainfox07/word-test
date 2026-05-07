@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { SpotCheckRunner } from "@/components/test/spot-check-runner";
 import { WordReader } from "@/components/test/word-reader";
 import { TestRunner } from "@/components/test/test-runner";
 import { requireSession } from "@/lib/auth-session";
@@ -39,6 +40,20 @@ export default async function TestModePage({ params }: TestModePageProps) {
             phonetic: word.phonetic,
             partOfSpeech: word.partOfSpeech,
             pronunciationAudioUrl: word.pronunciationAudioUrl,
+          }))}
+        />
+      ) : mode === "spot_check" ? (
+        <SpotCheckRunner
+          wordListId={wordList.id}
+          wordListName={wordList.name}
+          words={wordList.words.map((word) => ({
+            id: word.id,
+            word: word.displayWord,
+            meaning: word.displayMeaning,
+            acceptedAnswers: word.acceptedAnswers,
+            pronunciationAudioUrl: word.pronunciationAudioUrl,
+            phonetic: word.phonetic,
+            partOfSpeech: word.partOfSpeech,
           }))}
         />
       ) : (

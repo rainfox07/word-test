@@ -5,14 +5,17 @@ import { PaginatedWordListColumn } from "@/components/word-lists/paginated-word-
 import { WordListForms } from "@/components/word-lists/word-list-forms";
 import { requireSession } from "@/lib/auth-session";
 import { getAccessibleWordListsWithProgress } from "@/lib/data";
+import { getAccessibleTextbooks } from "@/lib/textbooks";
 
 export default async function WordListsPage() {
   const session = await requireSession();
-  const wordLists = await getAccessibleWordListsWithProgress(session.user.id);
+  const [wordLists, textbookLists] = await Promise.all([
+    getAccessibleWordListsWithProgress(session.user.id),
+    getAccessibleTextbooks(),
+  ]);
 
   const systemLists = wordLists.filter((list) => list.isSystem);
   const ownedLists = wordLists.filter((list) => !list.isSystem);
-  const textbookLists: Array<(typeof wordLists)[number]> = [];
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -32,24 +35,26 @@ export default async function WordListsPage() {
         <Card className="h-full">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-950">📖 选择课本</h2>
-            <p className="mt-1 text-sm text-slate-500">这里预留给后续导入的课本内容，未来可直接像词库一样选择使用。</p>
+            <p className="mt-1 text-sm text-slate-500">按课本的单元与小节逐层进入，最后再选择抽验、默写或领读模式。</p>
           </div>
 
           <div className="space-y-4">
             {textbookLists.length ? (
-              textbookLists.map((list) => (
-                <div key={list.id} className="rounded-2xl border border-slate-200 px-4 py-4">
+              textbookLists.map((book) => (
+                <div key={book.id} className="rounded-2xl border border-slate-200 px-4 py-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="font-semibold text-slate-950">{list.name}</p>
-                      <p className="mt-1 text-sm text-slate-500">{list.description || "课本词库"}</p>
-                      <p className="mt-2 text-xs text-slate-400">{list.words.length} 个单词</p>
+                      <p className="font-semibold text-slate-950">{book.name}</p>
+                      <p className="mt-1 text-sm text-slate-500">{book.description || "课本词库"}</p>
+                      <p className="mt-2 text-xs text-slate-400">
+                        {book.unitCount} 个单元 · {book.sectionCount} 个小节 · {book.totalWords} 个单词
+                      </p>
                     </div>
                     <Link
-                      href={`/test/${list.id}`}
+                      href={`/textbooks/${book.id}`}
                       className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 hover:text-brand-800"
                     >
-                      选择该词库
+                      进入课本
                       <span className="translate-x-0 text-base transition-transform duration-200 group-hover:translate-x-1">
                         →
                       </span>
@@ -60,7 +65,7 @@ export default async function WordListsPage() {
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
                 <p className="text-base font-semibold text-slate-900">暂无课本数据</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">后续可导入课本内容，这里会保留和词库卡片一致的展示结构。</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">课本会按“选择单元 → 选择小节 → 选择操作”的结构展示，后续新增课本也会复用这套入口。</p>
               </div>
             )}
           </div>

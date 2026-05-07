@@ -26,7 +26,7 @@ export function TestModeSelector({ wordListId, wordListName }: TestModeSelectorP
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {testModes.map((mode) => {
           const meta = getTestModeMeta(mode);
 

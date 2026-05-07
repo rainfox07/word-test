@@ -1,4 +1,4 @@
-export const testModes = ["audio_to_word", "meaning_to_word", "word_reader"] as const;
+export const testModes = ["audio_to_word", "meaning_to_word", "word_reader", "spot_check"] as const;
 
 export type TestMode = (typeof testModes)[number];
 
@@ -7,6 +7,14 @@ export function isTestMode(value: string): value is TestMode {
 }
 
 export function getTestModeMeta(mode: TestMode) {
+  if (mode === "spot_check") {
+    return {
+      title: "单词抽验",
+      label: "单词抽验",
+      description: "自选题量和作答时间，快速抽查当前词库里的单词掌握情况。",
+    };
+  }
+
   if (mode === "word_reader") {
     return {
       title: "单词领读",

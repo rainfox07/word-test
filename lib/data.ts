@@ -15,10 +15,12 @@ export async function getAccessibleWordLists(userId: string) {
     orderBy: [desc(wordLists.isSystem), desc(wordLists.createdAt)],
   });
 
-  return lists.map((list) => ({
-    ...list,
-    words: list.words.map((word) => toWordView(word)),
-  }));
+  return lists
+    .filter((list) => list.sourceType !== "textbook")
+    .map((list) => ({
+      ...list,
+      words: list.words.map((word) => toWordView(word)),
+    }));
 }
 
 export async function getAccessibleWordListsWithProgress(userId: string) {
