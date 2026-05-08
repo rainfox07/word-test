@@ -21,7 +21,7 @@ export function PronunciationSourceSelect({
       <div>
         <p className="text-sm font-medium text-slate-700">读音来源</p>
         <p className="mt-1 text-xs leading-6 text-slate-500">
-          当前选择会保存在本地，下次进入页面时自动恢复。默认使用自动模式。
+          如遇故障，请自主选择其他模式。
         </p>
       </div>
 

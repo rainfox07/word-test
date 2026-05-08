@@ -48,10 +48,10 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           {isLoginMode
-            ? "继续你的拼写练习。"
+            ? "逸一时，误一世。加油干！"
             : isResetMode
               ? "使用注册时的邀请码和昵称重置密码。"
-              : "注册后可管理自己的词库和学习记录。"}
+              : "注册账户 -> 登陆账户 -> 开始学习"}
         </p>
       </div>
 
@@ -99,12 +99,12 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
               }
 
               if (!/^\d{10}$/.test(invitationCode)) {
-                setError("邀请码格式错误，应为 10 位数字");
+                setError("无效的邀请码");
                 return;
               }
 
               if (!isInvitationCodeInRange(invitationCode)) {
-                setError("邀请码不在可用范围内");
+                setError("无效的邀请码");
                 return;
               }
 
@@ -156,18 +156,18 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
       >
         {!isLoginMode ? (
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">昵称</span>
-            <Input name="name" placeholder={isResetMode ? "注册时使用的昵称" : "例如：Rain"} required />
+            <span className="text-sm font-medium text-slate-700">用户名</span>
+            <Input name="name" placeholder={isResetMode ? "注册时使用的昵称" : "或在重置密码中使用到，请牢记"} required />
           </label>
         ) : null}
 
         {!isResetMode ? (
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">邮箱/手机号</span>
+            <span className="text-sm font-medium text-slate-700">账号</span>
             <Input
               name="identifier"
               type="text"
-              placeholder={isLoginMode ? "演示账户可直接输入 admin" : "you@example.com 或 18837000038"}
+              placeholder={isLoginMode ? "输入邮箱/手机号" : "输入邮箱或中国大陆标准11位手机号"}
               required
             />
           </label>
@@ -175,7 +175,7 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
 
         <label className="block space-y-2">
           <span className="text-sm font-medium text-slate-700">{isResetMode ? "新密码" : "密码"}</span>
-          <Input name="password" type="password" placeholder="至少 8 位" required minLength={8} />
+          <Input name="password" type="password" placeholder="至少八位的密码" required minLength={8} />
         </label>
 
         {!isLoginMode ? (
@@ -194,7 +194,7 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
                 type="text"
                 inputMode="numeric"
                 pattern="\d{10}"
-                placeholder="2510560001"
+                placeholder="或在重置密码中使用到，请牢记"
                 required
               />
             </label>
@@ -280,7 +280,7 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
         ) : null}
       </div>
 
-      {isLoginMode ? (
+      {/* {isLoginMode ? (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           默认演示账户：<code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">admin</code> /{" "}
           <code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">admin</code>
@@ -290,7 +290,7 @@ export function AuthForm({ mode, verificationChallenge }: AuthFormProps) {
           <br />
           手机号登录示例格式：<code className="rounded bg-white px-1 py-0.5 text-xs text-slate-900">18837000038</code>
         </div>
-      ) : null}
+      ) : null} */}
     </Card>
   );
 }

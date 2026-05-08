@@ -99,12 +99,12 @@ function OverviewSection({ data }: { data: AdminDashboardData }) {
   const mostUsedWordList = [...data.wordListPerformance].sort((a, b) => b.totalTests - a.totalTests)[0];
 
   const overviewCards = [
-    { label: "用户总数", value: data.overview.totalUsers, detail: "当前注册用户" },
-    { label: "今日活跃用户", value: data.overview.todayActiveUsers, detail: "今天至少答过一次题" },
-    { label: "总练习次数", value: data.overview.totalPracticeCount, detail: "累计 test_records 数量" },
-    { label: "今日练习次数", value: data.overview.todayPracticeCount, detail: "今日新增练习记录" },
-    { label: "全站平均正确率", value: `${data.overview.averageAccuracy}%`, detail: "基于所有答题记录" },
-    { label: "错词总数", value: data.overview.totalWrongCount, detail: "全站错误记录数" },
+    { label: "用户总数", value: data.overview.totalUsers},
+    { label: "今日活跃用户", value: data.overview.todayActiveUsers },
+    { label: "总练习次数", value: data.overview.totalPracticeCount},
+    { label: "今日练习次数", value: data.overview.todayPracticeCount },
+    { label: "全站平均正确率", value: `${data.overview.averageAccuracy}%` },
+    { label: "错词总数", value: data.overview.totalWrongCount },
   ];
 
   return (
@@ -114,18 +114,18 @@ function OverviewSection({ data }: { data: AdminDashboardData }) {
           <Card key={card.label}>
             <p className="text-sm text-slate-500">{card.label}</p>
             <p className="mt-3 text-4xl font-black text-slate-950">{card.value}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{card.detail}</p>
+            {/* <p className="mt-2 text-sm leading-6 text-slate-500">{card.detail}</p> */}
           </Card>
         ))}
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
-          <p className="text-sm font-medium text-brand-700">全站重点提醒</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">现在最值得优先关注的三件事</h2>
+          <p className="text-sm font-medium text-brand-700">全站重点总览</p>
+          {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">现在最值得优先关注的三件事</h2> */}
           <div className="mt-5 space-y-3">
             <div className="rounded-2xl border border-slate-200 px-4 py-4">
-              <p className="text-sm text-slate-500">当前最容易错的单词</p>
+              <p className="text-sm text-slate-500">错误率最高的单词</p>
               <p className="mt-2 text-lg font-semibold text-slate-950">
                 {data.errorAnalysis.topWrongWords[0]
                   ? `${data.errorAnalysis.topWrongWords[0].word} · ${data.errorAnalysis.topWrongWords[0].meaning}`
@@ -150,8 +150,8 @@ function OverviewSection({ data }: { data: AdminDashboardData }) {
         </Card>
 
         <Card>
-          <p className="text-sm font-medium text-brand-700">轻量漏斗</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">用户是否真的走进学习流程</h2>
+          <p className="text-sm font-medium text-brand-700">用户数据分析</p>
+          {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">用户是否真的走进学习流程</h2> */}
           <div className="mt-5 space-y-3">
             <div className="rounded-2xl bg-slate-50 px-4 py-4">
               <p className="text-sm text-slate-500">注册用户数</p>
@@ -182,7 +182,7 @@ function UsersSection({ data, activeSection }: { data: AdminDashboardData; activ
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-brand-700">用户学习表现</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">谁在高频使用，谁几乎没开始</h2>
+          {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">谁在高频使用，谁几乎没开始</h2> */}
         </div>
         <div className="flex gap-2 text-sm">
           <Link
@@ -257,7 +257,7 @@ function ErrorsSection({ data }: { data: AdminDashboardData }) {
       <div className="grid gap-8 xl:grid-cols-2">
         <Card>
           <p className="text-sm font-medium text-brand-700">全站错误词 Top 10</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">最容易错在哪里</h2>
+          {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">易错词一览无余</h2> */}
           <div className="mt-5 space-y-3">
             {data.errorAnalysis.topWrongWords.map((item, index) => (
               <div key={item.wordId} className="rounded-2xl border border-slate-200 px-4 py-4">
@@ -282,7 +282,7 @@ function ErrorsSection({ data }: { data: AdminDashboardData }) {
 
         <Card>
           <p className="text-sm font-medium text-brand-700">最近 7 天错误词 Top 10</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">近期是否出现新的薄弱点</h2>
+          {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">近期是否出现新的薄弱点</h2> */}
           <div className="mt-5 space-y-3">
             {data.errorAnalysis.topWrongWords7d.map((item, index) => (
               <div key={item.wordId} className="rounded-2xl border border-slate-200 px-4 py-4">
@@ -308,7 +308,7 @@ function ErrorsSection({ data }: { data: AdminDashboardData }) {
 
       <Card>
         <p className="text-sm font-medium text-brand-700">各词库中最容易错的单词</p>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">按词库快速定位薄弱点</h2>
+        {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">按词库快速定位薄弱点</h2> */}
         <div className="mt-5 grid gap-4 xl:grid-cols-2">
           {data.errorAnalysis.errorTopByWordList.map((group) => (
             <div key={group.wordListName} className="rounded-2xl border border-slate-200 px-4 py-4">
@@ -335,7 +335,7 @@ function WordListsSection({ data }: { data: AdminDashboardData }) {
   return (
     <Card>
       <p className="text-sm font-medium text-brand-700">词库表现</p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">哪些词库更热门，哪些更容易卡人</h2>
+      {/* <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">哪些词库更热门，哪些更容易卡人</h2> */}
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead className="text-slate-500">
@@ -385,7 +385,7 @@ function ActivitiesSection({ data }: { data: AdminDashboardData }) {
   return (
     <Card>
       <p className="text-sm font-medium text-brand-700">最近活动流</p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">站点近期发生了什么</h2>
+      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">用户操作监控</h2>
       <div className="mt-5 space-y-3">
         {data.activities.map((activity) => (
           <div key={activity.id} className="rounded-2xl border border-slate-200 px-4 py-4">
@@ -447,7 +447,7 @@ function SystemSection({ data }: { data: AdminDashboardData }) {
         </div>
       </Card>
 
-      <Card>
+      {/* <Card>
         <p className="text-sm font-medium text-brand-700">实现说明</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">哪些数据是精确的，哪些是 MVP</h2>
         <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
@@ -456,7 +456,7 @@ function SystemSection({ data }: { data: AdminDashboardData }) {
           <p>用户行为漏斗中的“完成至少一次完整测试”目前用累计答题数 ≥ 10 做近似估算。</p>
           <p>错题本使用人数、单词领读使用人数、证书状态、最近部署时间当前未接入事件埋点或外部监控，因此只做占位展示。</p>
         </div>
-      </Card>
+      </Card> */}
     </div>
   );
 }

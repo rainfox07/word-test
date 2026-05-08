@@ -26,16 +26,16 @@ export function AdminAuthForm() {
   return (
     <Card className="w-full max-w-md">
       <div className="mb-6">
-        <p className="text-sm font-medium text-brand-700">Admin 面板</p>
-        <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">输入管理员密码</h1>
+        <p className="text-sm font-medium text-brand-700">Admin Dashboard</p>
+        <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">输入密钥</h1>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          这个面板用于查看全站用户、学习数据、错误排行和系统状态。
+          此面板仅供管理员使用，如无权限请退出。
         </p>
       </div>
 
       <form action={formAction} className="space-y-4">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">管理员密码</span>
+          <span className="text-sm font-medium text-slate-700">输入 key</span>
           <Input name="password" type="password" placeholder="请输入管理员密码" required />
         </label>
 
