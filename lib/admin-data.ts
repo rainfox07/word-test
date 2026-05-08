@@ -26,6 +26,10 @@ function twentyFourHoursAgo() {
   return date.toISOString();
 }
 
+function isBuildTime() {
+  return process.env.npm_lifecycle_event === "build" || process.env.NEXT_PHASE === "phase-production-build";
+}
+
 function percentage(correct: number, total: number) {
   return total > 0 ? Math.round((correct / total) * 100) : 0;
 }
@@ -51,20 +55,29 @@ async function getDatabaseHealth() {
 }
 
 async function getAudioApiHealth() {
+  if (isBuildTime()) {
+    return { label: "构建中跳过", tone: "slate" as const };
+  }
+
+  let timer: NodeJS.Timeout | null = null;
+
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
+    timer = setTimeout(() => controller.abort(), 2500);
     const response = await fetch(`${env.dictionaryApiBaseUrl}/test`, {
       signal: controller.signal,
       cache: "no-store",
     });
-    clearTimeout(timer);
 
     return response.ok
       ? { label: "正常", tone: "emerald" as const }
       : { label: "异常", tone: "rose" as const };
   } catch {
     return { label: "异常", tone: "rose" as const };
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 }
 
